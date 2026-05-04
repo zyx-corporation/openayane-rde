@@ -130,6 +130,9 @@ def run_phase1_evaluation(
         )
 
     return Phase1EvaluationResult(
+        task_contract=task_contract,
+        generator_output=generator_output,
+        relation_context=relation_context,
         structural_diff=structural_diff,
         semantic_delta=semantic_delta,
         rde_result=rde_result,

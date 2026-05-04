@@ -6,10 +6,13 @@ from pydantic import BaseModel
 
 from openayane_rde.core.models import (
     AuditEvent,
+    GeneratorOutput,
     PolicyDecision,
     RDEResult,
+    RelationContext,
     SemanticDelta,
     StructuralDiff,
+    TaskContract,
 )
 
 
@@ -19,8 +22,15 @@ class Phase1EvaluationResult(BaseModel):
     Exposes all intermediate artifacts for UI, CLI, audit review, and future
     RelationStore updates. `audit_event` is set only when `audit_log_path` was
     provided to the run function.
+
+    ``task_contract``, ``generator_output``, and optional ``relation_context``
+    mirror the evaluation inputs so callers can persist a full evaluation unit
+    (e.g. Phase 2 RelationStore updates) without passing parallel arguments.
     """
 
+    task_contract: TaskContract
+    generator_output: GeneratorOutput
+    relation_context: RelationContext | None = None
     structural_diff: StructuralDiff
     semantic_delta: SemanticDelta
     rde_result: RDEResult

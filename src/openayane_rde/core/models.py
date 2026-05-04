@@ -403,6 +403,16 @@ class RelationContext(BaseModel):
     model_config = {"extra": "forbid"}
 
 
+class RelationUpdateSummary(BaseModel):
+    """Outcome of applying Phase 1 evaluation data to relation state (Phase 2 hook)."""
+
+    context: RelationContext
+    updated: bool = False
+    message: str = ""
+
+    model_config = {"extra": "forbid"}
+
+
 # ---------------------------------------------------------------------------
 # ExecutionResult
 # ---------------------------------------------------------------------------

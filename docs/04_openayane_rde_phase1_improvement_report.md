@@ -23,7 +23,11 @@ Phase 1 Structural RDE MVP としては概ね成功している。RDE を実行�
 
 **推奨:** `Phase1EvaluationResult`（`structural_diff`, `semantic_delta`, `rde_result`, `policy_decision`, `audit_event | None`）を返す。
 
-→ **実装済み:** `openayane_rde.runtime.result.Phase1EvaluationResult` と `run_phase1_evaluation()` の戻り値をこれに変更した。
+→ **実装済み:** `openayane_rde.runtime.result.Phase1EvaluationResult` と `run_phase1_evaluation()` の戻り値をこれに変更した。さらに **`task_contract`**, **`generator_output`**, 任意の **`relation_context`** を同梱し、Relation 更新や永続化で入力を再取得しなくてよいようにした（Phase 2 向け）。
+
+→ **Relation フック（スタブ）:** `update_relation_from_evaluation_result()` と `RelationUpdateSummary`（`openayane_rde.relation.update` / パッケージルートからエクスポート）。
+
+→ **スキーマ:** 主要 enum の Schema↔Literal 同期、`tests/schema_fixtures/*.valid.json` による代表インスタンス検証を追加。詳細は `docs/10_openayane_rde_phase2_spec.md`。
 
 ### 1.2 RelationStore update の最小実装
 
@@ -39,7 +43,7 @@ neutral stub のみでは、過去の ΔM を次回判断へ戻す履歴参照�
 
 仕様と実装の「Silent ΔM」を防ぐため、必須フィールド・主要 enum の整合をテストで固定する。
 
-→ **実装済み:** `tests/unit/test_schema_model_sync.py` で各スキーマの `required` がモデルフィールドに含まれること、および一部 enum の一致を検証。
+→ **実装済み:** `tests/unit/test_schema_model_sync.py` で各スキーマの `required` がモデルフィールドに含まれること、および **RDE / Risk / RequiredAction / ProtectedElement / output_type / Audit action / Provider / DiffDomain / ChangeType** 等の enum 一致を検証。`tests/schema_fixtures/` と `tests/unit/test_schema_fixtures.py` で代表 JSON がスキーマを満たすことを確認。
 
 ### 2.2 CI
 

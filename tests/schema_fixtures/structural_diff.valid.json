@@ -1,0 +1,16 @@
+{
+  "diff_id": "sd-fixture-1",
+  "contract_id": "tc-fixture-1",
+  "domain": "markdown",
+  "changed_nodes": [],
+  "added_nodes": [],
+  "deleted_nodes": [],
+  "moved_nodes": [],
+  "protected_element_changes": [],
+  "schema_violations": [],
+  "signature_changes": [],
+  "reference_breaks": [],
+  "self_report_mismatches": [],
+  "diff_confidence": 1.0,
+  "created_at": "2026-01-01T00:00:00+00:00"
+}

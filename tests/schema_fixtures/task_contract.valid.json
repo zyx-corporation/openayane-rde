@@ -1,0 +1,22 @@
+{
+  "contract_id": "tc-fixture-1",
+  "mode": "preservation",
+  "target_scope": { "files": [], "symbols": [], "sections": [] },
+  "requested_action": "Fixture validation only.",
+  "allowed_delta_m": [],
+  "forbidden_delta_m": [],
+  "protected_elements": [],
+  "output_policy": {
+    "require_patch": false,
+    "require_change_report": false,
+    "require_uncertainty_report": false
+  },
+  "review_policy": {
+    "preserved": "auto_approve",
+    "authorized_deviation": "auto_approve",
+    "benign_incidental_drift": "approve_with_note",
+    "suspicious_drift": "human_review",
+    "critical_corruption": "halt"
+  },
+  "created_at": "2026-01-01T00:00:00+00:00"
+}
