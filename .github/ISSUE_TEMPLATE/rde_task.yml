@@ -1,0 +1,116 @@
+name: RDE Task
+about: Track an OpenAyane RDE implementation or design task
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template to preserve the connection between design intent, implementation, and RDE difference inspection.
+
+  - type: input
+    id: phase
+    attributes:
+      label: Phase
+      description: Phase 0, Phase 1, Phase 2, Phase 3, or Phase 4
+      placeholder: Phase 3
+    validations:
+      required: true
+
+  - type: input
+    id: component
+    attributes:
+      label: Component
+      description: Docs, RDE Core, RelationStore, AuditLog, Human Review, Execution Gate, Safe Runtime, Tool Gating, Rollback, Semantic Evaluator, CI, Release
+      placeholder: Execution Gate
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - P0
+        - P1
+        - P2
+        - P3
+    validations:
+      required: true
+
+  - type: dropdown
+    id: risk
+    attributes:
+      label: Risk
+      options:
+        - Low
+        - Medium
+        - High
+        - Critical
+    validations:
+      required: true
+
+  - type: dropdown
+    id: rde_category
+    attributes:
+      label: Initial RDE Category
+      description: This may change during review.
+      options:
+        - preserved
+        - authorized transformation
+        - inferred extension
+        - suspicious drift
+        - critical distortion
+    validations:
+      required: true
+
+  - type: textarea
+    id: purpose
+    attributes:
+      label: Purpose
+      description: What should this issue accomplish?
+      placeholder: Describe the implementation or design objective.
+    validations:
+      required: true
+
+  - type: textarea
+    id: design_intent
+    attributes:
+      label: Original design intent
+      description: What original OpenAyane / RDE intention must be preserved?
+      placeholder: Explain the design element that must not be lost.
+    validations:
+      required: true
+
+  - type: textarea
+    id: implementation_notes
+    attributes:
+      label: Implementation notes
+      description: Expected implementation approach, boundaries, and non-goals.
+    validations:
+      required: false
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Concrete completion criteria.
+      placeholder: |
+        - [ ] Tests exist or non-applicability is justified
+        - [ ] Audit / evidence path is clear
+        - [ ] RDE review checklist is completed
+    validations:
+      required: true
+
+  - type: textarea
+    id: rde_review
+    attributes:
+      label: RDE review checklist
+      value: |
+        - Preserved elements:
+        - Authorized transformations:
+        - Inferred extensions:
+        - Unresolved elements:
+        - Drift / distortion risk:
+        - Next update policy:
+    validations:
+      required: true
