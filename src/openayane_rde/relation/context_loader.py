@@ -25,6 +25,7 @@ def load_neutral_context(
         interaction_count=0,
         last_delta_m=0.0,
         drift_patterns=[],
+        drift_pattern_counts={},
         review_threshold_adjustment=0.0,
         generator_reliability_score=None,
         document_fragility_score=None,
@@ -45,6 +46,10 @@ def relation_record_to_context(record: RelationStoreRecord) -> RelationContext:
         else None
     )
     drift_labels: list[str] = [str(p.kind) for p in record.drift_patterns]
+    drift_counts: dict[str, int] = {}
+    for p in record.drift_patterns:
+        k = str(p.kind)
+        drift_counts[k] = drift_counts.get(k, 0) + p.count
     return RelationContext(
         subject_id=record.subject_id,
         object_id=record.object_id,
@@ -54,6 +59,7 @@ def relation_record_to_context(record: RelationStoreRecord) -> RelationContext:
         interaction_count=record.interaction_count,
         last_delta_m=record.last_delta_m,
         drift_patterns=drift_labels,
+        drift_pattern_counts=drift_counts,
         review_threshold_adjustment=record.review_threshold_adjustment,
         generator_reliability_score=gen_rel,
         document_fragility_score=doc_frag,

@@ -51,25 +51,49 @@ def _document_id(result: Phase1EvaluationResult, object_id: str) -> str:
     return object_id
 
 
-def _infer_pattern_kind(
+def _infer_pattern_kinds(
     structural_diff: StructuralDiff,
     rde_result: RDEResult,
-) -> DriftPatternKind:
+) -> list[DriftPatternKind]:
+    """Infer one or more drift pattern kinds for the same evaluation."""
+
+    kinds: list[DriftPatternKind] = []
     if structural_diff.self_report_mismatches:
-        return "self_report_mismatch"
-    if any(pc.element == "citations" for pc in structural_diff.protected_element_changes):
-        return "citation_deletion"
+        kinds.append("self_report_mismatch")
+    citation_signals = (
+        sum(
+            1
+            for n in structural_diff.deleted_nodes
+            if n.kind in ("citation", "link")
+        )
+        + sum(
+            1
+            for pc in structural_diff.protected_element_changes
+            if pc.element == "citations"
+        )
+    )
+    if citation_signals:
+        kinds.append("citation_deletion")
     if any(pc.element == "numbers" for pc in structural_diff.protected_element_changes):
-        return "number_change"
+        kinds.append("number_change")
     if any(pc.element == "definitions" for pc in structural_diff.protected_element_changes):
-        return "definition_shift"
+        kinds.append("definition_shift")
     if structural_diff.schema_violations:
-        return "required_field_deletion"
+        kinds.append("required_field_deletion")
     if structural_diff.signature_changes:
-        return "signature_change"
+        kinds.append("signature_change")
     if rde_result.classification == "critical_corruption":
-        return "constraint_omission"
-    return "other"
+        kinds.append("constraint_omission")
+
+    seen: set[DriftPatternKind] = set()
+    ordered: list[DriftPatternKind] = []
+    for k in kinds:
+        if k not in seen:
+            seen.add(k)
+            ordered.append(k)
+    if not ordered:
+        ordered.append("other")
+    return ordered
 
 
 def _merge_pattern(
@@ -114,7 +138,20 @@ def _apply_structural_fragility(
 ) -> None:
     profile.total_edits += 1
     profile.protected_change_count += len(structural_diff.protected_element_changes)
-    profile.citation_break_count += len(structural_diff.reference_breaks)
+    citation_events = (
+        sum(
+            1
+            for n in structural_diff.deleted_nodes
+            if n.kind in ("citation", "link")
+        )
+        + sum(
+            1
+            for pc in structural_diff.protected_element_changes
+            if pc.element == "citations"
+        )
+        + len(structural_diff.reference_breaks)
+    )
+    profile.citation_break_count += citation_events
     num_changes = sum(
         1
         for n in structural_diff.changed_nodes + structural_diff.deleted_nodes
@@ -167,13 +204,12 @@ def _apply_classification_metrics(
     if structural_diff.self_report_mismatches:
         record.trust = clip01(record.trust - 0.05)
         record.self_report_mismatch_count += 1
-        _merge_pattern(record, "self_report_mismatch", "self-report mismatch")
-        patterns_touched.append("self_report_mismatch")
+        record.self_report_mismatch_item_count += len(structural_diff.self_report_mismatches)
 
-    kind = _infer_pattern_kind(structural_diff, rde_result)
     example = rde_result.explanation[:200] if rde_result.explanation else ""
-    _merge_pattern(record, kind, example)
-    patterns_touched.append(kind)
+    for kind in _infer_pattern_kinds(structural_diff, rde_result):
+        _merge_pattern(record, kind, example)
+        patterns_touched.append(kind)
 
     record.last_delta_m = semantic_delta.delta_m_score
     record.interaction_count += 1

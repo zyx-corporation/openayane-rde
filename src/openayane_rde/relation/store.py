@@ -23,7 +23,9 @@ class RelationStore(Protocol):
         ...
 
 
-def _store_key(subject_id: str, object_id: str) -> str:
+def relation_store_key(subject_id: str, object_id: str) -> str:
+    """Stable internal map key for relation records (U+001F unit separator)."""
+
     return f"{subject_id}\x1f{object_id}"
 
 
@@ -50,11 +52,11 @@ class JSONRelationStore:
         tmp.replace(self.path)
 
     def get(self, subject_id: str, object_id: str) -> RelationStoreRecord | None:
-        return self.load_all().get(_store_key(subject_id, object_id))
+        return self.load_all().get(relation_store_key(subject_id, object_id))
 
     def upsert(self, record: RelationStoreRecord) -> None:
         all_r = self.load_all()
-        all_r[_store_key(record.subject_id, record.object_id)] = record
+        all_r[relation_store_key(record.subject_id, record.object_id)] = record
         self.save_all(all_r)
 
     def load_context(self, subject_id: str, object_id: str) -> RelationContext:

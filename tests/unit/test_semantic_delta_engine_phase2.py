@@ -22,6 +22,7 @@ def test_json_schema_violation_populates_constraints() -> None:
         ],
     )
     delta = estimate_semantic_delta(diff, contract)  # type: ignore[arg-type]
-    assert delta.is_stub is False
+    assert delta.semantic_mode == "structural_baseline"
+    assert delta.is_stub is True
     assert "/x" in delta.changed_constraints
     assert delta.changed_safety_conditions

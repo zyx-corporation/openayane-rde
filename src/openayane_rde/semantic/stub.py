@@ -59,4 +59,5 @@ def semantic_delta_stub(
         semantic_equivalence_score=equivalence,
         uncertainty=0.5,
         is_stub=True,
+        semantic_mode="stub",
     )

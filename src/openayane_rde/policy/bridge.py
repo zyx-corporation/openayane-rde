@@ -23,8 +23,8 @@ def decide_policy(
     critical_corruption classification always results in halt.
     Other classifications use the review_policy from the TaskContract.
     """
-    action = decide_action(rde_result, contract, relation_context)
-    rationale = _build_rationale(rde_result, action)
+    action, history_notes = decide_action(rde_result, contract, relation_context)
+    rationale = _build_rationale(rde_result, action, history_notes)
 
     return PolicyDecision(
         contract_id=contract.contract_id,
@@ -34,7 +34,11 @@ def decide_policy(
     )
 
 
-def _build_rationale(rde_result: RDEResult, action: str) -> str:
+def _build_rationale(
+    rde_result: RDEResult,
+    action: str,
+    history_notes: list[str] | None = None,
+) -> str:
     parts = [
         f"RDE classification: {rde_result.classification}.",
         f"Risk level: {rde_result.risk_level}.",
@@ -48,6 +52,9 @@ def _build_rationale(rde_result: RDEResult, action: str) -> str:
     if rde_result.suspicious_elements:
         n = len(rde_result.suspicious_elements)
         parts.append(f"{n} suspicious element(s) identified.")
+
+    if history_notes:
+        parts.extend(history_notes)
 
     if action == "halt":
         parts.append(

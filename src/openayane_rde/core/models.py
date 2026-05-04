@@ -19,6 +19,8 @@ _SHA256_HEX_PATTERN = re.compile(r"^sha256:[a-fA-F0-9]{64}$")
 
 ContractMode = Literal["preservation", "creative", "refactor", "research", "execution"]
 
+SemanticDeltaMode = Literal["stub", "structural_baseline", "llm_evaluator"]
+
 ProtectedElementKind = Literal[
     "claims",
     "definitions",
@@ -288,6 +290,7 @@ class SemanticDelta(BaseModel):
     semantic_equivalence_score: float = Field(default=1.0, ge=0.0, le=1.0)
     uncertainty: float = Field(default=0.0, ge=0.0, le=1.0)
     is_stub: bool = True
+    semantic_mode: SemanticDeltaMode = "stub"
     created_at: datetime = Field(default_factory=now_utc)
 
     model_config = {"extra": "forbid"}
@@ -420,6 +423,7 @@ class RelationContext(BaseModel):
     interaction_count: int = 0
     last_delta_m: float = 0.0
     drift_patterns: list[str] = Field(default_factory=list)
+    drift_pattern_counts: dict[str, int] = Field(default_factory=dict)
     review_threshold_adjustment: float = Field(default=0.0, ge=0.0, le=1.0)
     generator_reliability_score: float | None = Field(default=None, ge=0.0, le=1.0)
     document_fragility_score: float | None = Field(default=None, ge=0.0, le=1.0)
@@ -475,7 +479,16 @@ class RelationStoreRecord(BaseModel):
     interaction_count: int = 0
     critical_corruption_count: int = 0
     suspicious_drift_count: int = 0
-    self_report_mismatch_count: int = 0
+    self_report_mismatch_count: int = Field(
+        0,
+        description=(
+            "Number of evaluations that included at least one self-report mismatch."
+        ),
+    )
+    self_report_mismatch_item_count: int = Field(
+        0,
+        description="Cumulative count of self-report mismatch rows across evaluations.",
+    )
     drift_patterns: list[DriftPattern] = Field(default_factory=list)
     generator_reliability_profile: GeneratorReliabilityProfile | None = None
     document_fragility_profile: DocumentFragilityProfile | None = None

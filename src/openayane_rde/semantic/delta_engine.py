@@ -1,4 +1,8 @@
-"""SemanticDelta Engine: Phase 2 structural extraction + Phase 1 baseline scoring."""
+"""SemanticDelta Engine: Phase 1 baseline scoring + Phase 2 structural candidate extraction.
+
+Uses :func:`semantic_delta_stub` for conservative scores, then enriches lists from
+:class:`StructuralDiff` by domain. LLM evaluation is not used; see ``semantic_mode``.
+"""
 
 from __future__ import annotations
 
@@ -55,5 +59,6 @@ def _phase2_structural_extract(
     delta.changed_numbers = sorted(set(numbers))
     delta.changed_references = sorted(set(references))
     delta.changed_safety_conditions = sorted(set(safety))
-    delta.is_stub = False
+    delta.is_stub = True
+    delta.semantic_mode = "structural_baseline"
     return delta

@@ -9,9 +9,55 @@ from openayane_rde.core.models import (
     TaskContract,
 )
 
+_ALLOWED_SYNONYMS: dict[str, list[str]] = {
+    "sentence restructuring": [
+        "paragraph restructured",
+        "wording",
+        "style",
+        "clarity",
+        "restructured",
+    ],
+    "error handling": ["try/except", "exception handling", "validation"],
+    "redundancy removal": ["redundant", "duplication", "shortened"],
+}
+
+_FORBIDDEN_SYNONYMS: dict[str, list[str]] = {
+    "numeric change": [
+        "number changed",
+        "threshold changed",
+        "value changed",
+        "numeric",
+    ],
+    "citation removal": [
+        "citation deleted",
+        "reference removed",
+        "link removed",
+    ],
+    "function signature change": ["signature changed", "signature change"],
+}
+
 
 def _norm(s: str) -> str:
     return s.lower()
+
+
+def _expand_phrase_variants(phrase: str, table: dict[str, list[str]]) -> list[str]:
+    """Return normalized variants for substring checks (canonical + synonyms)."""
+
+    p = _norm(phrase)
+    variants = [p]
+    for canonical, syns in table.items():
+        if _norm(canonical) == p:
+            variants.extend(_norm(x) for x in syns)
+            break
+    return list(dict.fromkeys(variants))
+
+
+def _text_matches_any_variant(lower_text: str, phrase: str, table: dict[str, list[str]]) -> bool:
+    for v in _expand_phrase_variants(phrase, table):
+        if v and v in lower_text:
+            return True
+    return False
 
 
 def _collect_signals(
@@ -55,8 +101,8 @@ def match_allowed_delta(
     """Match contract phrases against extracted change descriptions (Phase 2 baseline rules)."""
 
     signals = _collect_signals(structural_diff, semantic_delta)
-    allowed_phrases = [_norm(a) for a in contract.allowed_delta_m]
-    forbidden_phrases = [_norm(f) for f in contract.forbidden_delta_m]
+    allowed_phrases = list(contract.allowed_delta_m)
+    forbidden_phrases = list(contract.forbidden_delta_m)
 
     matched: list[str] = []
     unmatched: list[str] = []
@@ -64,14 +110,23 @@ def match_allowed_delta(
 
     for label, text in signals:
         lower = _norm(text)
-        hit_forbidden = [fp for fp in forbidden_phrases if fp and fp in lower]
+        hit_forbidden = [
+            fp
+            for fp in forbidden_phrases
+            if fp
+            and _text_matches_any_variant(lower, fp, _FORBIDDEN_SYNONYMS)
+        ]
         if hit_forbidden:
             forbidden_hits.append(f"{label}: {text} (forbidden: {hit_forbidden})")
             continue
         if label == "protected":
             unmatched.append(f"{label}: {text}")
             continue
-        hit_allowed = [ap for ap in allowed_phrases if ap and ap in lower]
+        hit_allowed = [
+            ap
+            for ap in allowed_phrases
+            if ap and _text_matches_any_variant(lower, ap, _ALLOWED_SYNONYMS)
+        ]
         if allowed_phrases and hit_allowed:
             matched.append(f"{label}: {text} (matched: {hit_allowed})")
         elif allowed_phrases:

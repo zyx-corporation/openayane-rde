@@ -23,6 +23,18 @@ from openayane_rde.core.models import (
 )
 from openayane_rde.rde.authorization import match_allowed_delta
 
+MIN_ALLOWED_DELTA_MATCH_SCORE_DEFAULT = 0.25
+
+
+def _min_allowed_match_score(contract: TaskContract) -> float:
+    """Tighter bar for preservation/execution; looser for research/creative."""
+
+    if contract.mode in ("preservation", "execution"):
+        return 0.30
+    if contract.mode in ("research", "creative"):
+        return 0.20
+    return MIN_ALLOWED_DELTA_MATCH_SCORE_DEFAULT
+
 
 def classify(
     preservation_score: float,
@@ -77,7 +89,7 @@ def classify(
     )
 
     if total_changes > 0 and contract.allowed_delta_m:
-        if auth_match.match_score < 0.25:
+        if auth_match.match_score < _min_allowed_match_score(contract):
             return "suspicious_drift", "medium", "human_review"
         return "authorized_deviation", "low", "approve_with_notes"
 
