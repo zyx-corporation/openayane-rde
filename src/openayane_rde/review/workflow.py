@@ -2,8 +2,14 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING
 
+from openayane_rde.audit.log import (
+    append_audit_event,
+    audit_event_human_review_decided,
+    audit_event_human_review_requested,
+)
 from openayane_rde.core.models import (
     ExecutionGateDecision,
     ExecutionTaskContract,
@@ -16,10 +22,18 @@ if TYPE_CHECKING:
 
 
 class HumanReviewWorkflow:
-    """In-memory queue with optional SQLite backing."""
+    """In-memory queue with optional SQLite backing and optional JSONL audit log."""
 
-    def __init__(self, store: SQLiteRelationStore | None = None) -> None:
+    def __init__(
+        self,
+        store: SQLiteRelationStore | None = None,
+        *,
+        audit_log_path: str | Path | None = None,
+    ) -> None:
         self._store = store
+        self._audit_log_path: Path | None = (
+            Path(audit_log_path) if audit_log_path is not None else None
+        )
         self._by_id: dict[str, ReviewRequest] = {}
 
     def create_request(
@@ -46,6 +60,9 @@ class HumanReviewWorkflow:
         self._by_id[req.review_request_id] = req
         if self._store is not None:
             self._store.create_review_request(req)
+        if self._audit_log_path is not None:
+            ev = audit_event_human_review_requested(req)
+            append_audit_event(self._audit_log_path, ev)
         return req
 
     def submit_decision(self, decision: ReviewDecision) -> ReviewRequest | None:
@@ -66,6 +83,9 @@ class HumanReviewWorkflow:
         self._by_id[decision.review_request_id] = updated
         if self._store is not None:
             self._store.append_review_decision(decision)
+        if self._audit_log_path is not None:
+            ev = audit_event_human_review_decided(decision, request=req)
+            append_audit_event(self._audit_log_path, ev)
         return updated
 
     def get_pending(self) -> list[ReviewRequest]:

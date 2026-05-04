@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from openayane_rde.agent.execution_gate import post_review_execution_mode
 from openayane_rde.agent.tool_contract import build_execution_task_contract, score_tool_call_risk
+from openayane_rde.audit.log import load_events
 from openayane_rde.core.models import ExecutionGateDecision, ReviewDecision, ToolCallRequest
 from openayane_rde.core.time import now_utc
 from openayane_rde.policy.execution_rules import synthetic_rde_for_tool
@@ -46,3 +48,66 @@ def test_create_pending_and_reject() -> None:
     wf.submit_decision(dec)
     assert wf.get(req.review_request_id) is not None
     assert wf.get(req.review_request_id).status == "rejected"
+
+
+def test_audit_log_request_and_decision(tmp_path) -> None:
+    log = tmp_path / "audit.jsonl"
+    wf = HumanReviewWorkflow(audit_log_path=log)
+    tc = ToolCallRequest(
+        tool_call_id="x",
+        agent_id="ag",
+        tool_name="w",
+        action_name="invoke",
+        arguments={"path": "p"},
+        created_at=now_utc(),
+    )
+    c = build_execution_task_contract(tc)
+    gate = _gate(tc)
+    req = wf.create_request(gate, c, tool_call_id=tc.tool_call_id, agent_id=tc.agent_id)
+    dec = ReviewDecision(
+        review_request_id=req.review_request_id,
+        reviewer_id="u",
+        decision="reject",
+        reason="nope",
+    )
+    wf.submit_decision(dec)
+    events = load_events(log)
+    assert [e.action for e in events] == ["human_review_requested", "human_review_decided"]
+    assert events[1].payload["decision"] == "reject"
+
+
+def test_post_review_execution_mode_maps_decisions() -> None:
+    rid = "rrq-test"
+    assert (
+        post_review_execution_mode(
+            ReviewDecision(
+                review_request_id=rid,
+                reviewer_id="r",
+                decision="approve",
+                reason="ok",
+            )
+        )
+        == "full_execute"
+    )
+    assert (
+        post_review_execution_mode(
+            ReviewDecision(
+                review_request_id=rid,
+                reviewer_id="r",
+                decision="approve_dry_run",
+                reason="dry",
+            )
+        )
+        == "dry_run_only"
+    )
+    assert (
+        post_review_execution_mode(
+            ReviewDecision(
+                review_request_id=rid,
+                reviewer_id="r",
+                decision="reject",
+                reason="no",
+            )
+        )
+        == "denied"
+    )

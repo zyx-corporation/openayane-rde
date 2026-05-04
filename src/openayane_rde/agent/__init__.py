@@ -4,6 +4,7 @@ from openayane_rde.agent.execution_gate import (
     enforce_execution_decision,
     evaluate_before_execution,
     execute_after_review_decision,
+    post_review_execution_mode,
 )
 from openayane_rde.core.models import ExecutionGateEvaluation
 from openayane_rde.agent.tool_contract import (
@@ -18,6 +19,7 @@ __all__ = [
     "enforce_execution_decision",
     "evaluate_before_execution",
     "execute_after_review_decision",
+    "post_review_execution_mode",
     "normalize_tool_call",
     "score_tool_call_risk",
 ]

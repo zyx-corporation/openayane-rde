@@ -23,7 +23,7 @@ class ExecutionPolicyConfig(BaseModel):
     require_review_for_external_side_effects: bool = True
     require_review_for_protected_resources: bool = True
     halt_on_critical_risk: bool = True
-    allow_dry_run_for_high_risk: bool = True
+    allow_dry_run_for_high_risk: bool = False
     min_trust_for_auto_execute: float = Field(default=0.5, ge=0.0, le=1.0)
     min_stability_for_auto_execute: float = Field(default=0.4, ge=0.0, le=1.0)
 
@@ -78,13 +78,14 @@ def decide_execution_policy_action(
 ) -> tuple[ExecutionGatePolicyAction, str]:
     """Map risk + RDE + relation history to gate policy action."""
 
+    if risk.risk_level == "critical" and not cfg.halt_on_critical_risk:
+        return "human_review", "Critical risk; halt disabled — escalate to review."
+
     if rde is not None and rde.classification == "critical_corruption":
         return "halt", "RDE classification critical_corruption."
 
     if risk.risk_level == "critical":
-        if cfg.halt_on_critical_risk:
-            return "halt", "ToolCallRisk critical."
-        return "human_review", "Critical risk; halt disabled — escalate to review."
+        return "halt", "ToolCallRisk critical."
 
     trust = relation_context.trust if relation_context else 0.5
     stability = relation_context.stability if relation_context else 0.5

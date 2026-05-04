@@ -140,6 +140,43 @@ def test_external_data_exfiltration_risk_halt(tmp_path) -> None:
     assert ev.decision.policy_action == "halt"
 
 
+def test_high_risk_delete_requires_human_review_by_default(tmp_path) -> None:
+    store = JSONRelationStore(tmp_path / "jd.json")
+    tc = ToolCallRequest(
+        tool_call_id="del1",
+        agent_id="a",
+        tool_name="delete_file",
+        action_name="invoke",
+        arguments={"path": "x.txt"},
+        target_resources=["x.txt"],
+        created_at=now_utc(),
+    )
+    ev = evaluate_before_execution(tc, store, ExecutionPolicyConfig(), subject_id="s", object_id="o")
+    assert ev.decision.risk.risk_level == "high"
+    assert ev.decision.policy_action == "human_review"
+
+
+def test_critical_risk_human_review_when_halt_disabled(tmp_path) -> None:
+    store = JSONRelationStore(tmp_path / "jc.json")
+    tc = ToolCallRequest(
+        tool_call_id="crit1",
+        agent_id="a",
+        tool_name="bash",
+        action_name="invoke",
+        arguments={"command": "echo", "token": "secret"},
+        created_at=now_utc(),
+    )
+    ev = evaluate_before_execution(
+        tc,
+        store,
+        ExecutionPolicyConfig(halt_on_critical_risk=False),
+        subject_id="s",
+        object_id="o",
+    )
+    assert ev.decision.risk.risk_level == "critical"
+    assert ev.decision.policy_action == "human_review"
+
+
 def test_external_unknown_human_review(tmp_path) -> None:
     store = JSONRelationStore(tmp_path / "j8.json")
     tc = ToolCallRequest(

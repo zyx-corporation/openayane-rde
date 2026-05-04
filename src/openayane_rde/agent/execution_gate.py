@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Literal, assert_never
+
 from openayane_rde.agent.tool_contract import (
     build_execution_task_contract,
     score_tool_call_risk,
@@ -24,6 +26,30 @@ from openayane_rde.policy.execution_rules import (
 from openayane_rde.relation.store import RelationStore
 from openayane_rde.review.workflow import HumanReviewWorkflow
 from openayane_rde.runtime.safe_execution import SafeExecutionRuntime
+
+PostReviewExecutionMode = Literal[
+    "full_execute",
+    "dry_run_only",
+    "denied",
+    "pending_more",
+]
+
+
+def post_review_execution_mode(decision: ReviewDecision) -> PostReviewExecutionMode:
+    """Map a reviewer decision to the safe-runtime path (policy outcome after review)."""
+
+    d = decision.decision
+    if d == "approve":
+        return "full_execute"
+    if d == "approve_dry_run":
+        return "dry_run_only"
+    if d == "reject":
+        return "denied"
+    if d == "request_revision":
+        return "pending_more"
+    if d == "require_rollback_plan":
+        return "pending_more"
+    assert_never(d)
 
 
 def evaluate_before_execution(
