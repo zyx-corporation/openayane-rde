@@ -109,3 +109,7 @@ def test_markdown_numeric_drift_chain_stepwise_comparison(tmp_path: Path) -> Non
     assert final is not None
     assert final.interaction_count == 20
     assert final.review_threshold_adjustment > 0.0
+    assert final.self_report_mismatch_count > 0
+    assert final.trust < 0.5
+    kinds = [p.kind for p in final.drift_patterns]
+    assert any(k in ("number_change", "self_report_mismatch") for k in kinds)

@@ -294,6 +294,8 @@ def update_relation_from_evaluation_result(
             stability=base_rc.stability,
             context_affinity=base_rc.context_affinity,
             interaction_count=base_rc.interaction_count,
+            self_report_mismatch_count=0,
+            self_report_mismatch_item_count=0,
             generator_reliability_profile=GeneratorReliabilityProfile(generator_id=gid),
             document_fragility_profile=DocumentFragilityProfile(document_id=doc_id),
             review_threshold_adjustment=base_rc.review_threshold_adjustment,

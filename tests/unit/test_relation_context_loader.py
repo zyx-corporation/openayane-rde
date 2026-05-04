@@ -1,27 +1,33 @@
-"""RelationContext loading from store."""
+"""RelationContext projection from RelationStoreRecord."""
 
 from __future__ import annotations
 
-from pathlib import Path
-
-from openayane_rde.core.models import RelationStoreRecord
-from openayane_rde.relation.context_loader import load_relation_context
-from openayane_rde.relation.store import JSONRelationStore
+from openayane_rde.core.models import DriftPattern, RelationStoreRecord
+from openayane_rde.relation.context_loader import relation_record_to_context
 
 
-def test_load_relation_context_unknown_returns_neutral(tmp_path: Path) -> None:
-    store = JSONRelationStore(tmp_path / "x.json")
-    ctx = load_relation_context("a", "b", store)
-    assert ctx.subject_id == "a"
-    assert ctx.object_id == "b"
-    assert ctx.trust == 0.5
-
-
-def test_load_relation_context_from_record(tmp_path: Path) -> None:
-    store = JSONRelationStore(tmp_path / "x.json")
-    store.upsert(
-        RelationStoreRecord(subject_id="u", object_id="d", trust=0.3, stability=0.8)
+def test_relation_record_to_context_drift_pattern_counts() -> None:
+    record = RelationStoreRecord(
+        subject_id="gen",
+        object_id="doc",
+        drift_patterns=[
+            DriftPattern(kind="number_change", count=3),
+            DriftPattern(kind="self_report_mismatch", count=1),
+        ],
     )
-    ctx = load_relation_context("u", "d", store)
-    assert ctx.trust == 0.3
-    assert ctx.stability == 0.8
+    ctx = relation_record_to_context(record)
+    assert ctx.drift_pattern_counts == {"number_change": 3, "self_report_mismatch": 1}
+    assert ctx.drift_patterns == ["number_change", "self_report_mismatch"]
+
+
+def test_relation_record_to_context_merges_counts_for_same_kind() -> None:
+    record = RelationStoreRecord(
+        subject_id="g",
+        object_id="d",
+        drift_patterns=[
+            DriftPattern(kind="number_change", count=2),
+            DriftPattern(kind="number_change", count=1),
+        ],
+    )
+    ctx = relation_record_to_context(record)
+    assert ctx.drift_pattern_counts == {"number_change": 3}

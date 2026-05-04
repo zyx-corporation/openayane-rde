@@ -45,6 +45,20 @@ From the repository root, **`make venv`** picks `python3.12` or `python3.11` on 
 
 If you see `ModuleNotFoundError: No module named 'pydantic'`, you are not using the venv where dependencies were installed, or you have not run `pip install -e '.[dev,markdown]'` yet.
 
+## Phase 2 scope and limitations
+
+### JSONRelationStore
+
+`JSONRelationStore` is a **Phase 2 minimal** persistence backend: single-file JSON, suitable for development and single-process workflows. It is **not** intended for concurrent production use (no cross-process locking). A **SQLite**-backed store (or equivalent) should be considered for Phase 3 or later when durability and concurrency matter.
+
+### SemanticDelta (`semantic_mode`)
+
+Phase 2 enrichment sets `semantic_mode` to `structural_baseline` while keeping `is_stub=True`. That stack performs **structural-diff-driven semantic candidates** (claims, constraints, safety hints). It does **not** perform full semantic equivalence checking and does **not** use an LLM evaluator by default.
+
+### `allowed_delta_m` / `forbidden_delta_m` matching
+
+Matching uses rule-based substring checks plus a small built-in **synonym map** (`rde/authorization.py`). It is a Phase 2 **baseline**, not domain-specific or language-aware matching. Future directions include locale-aware phrases (e.g. Japanese), code-oriented matchers, and optional LLM-based evaluators in later phases.
+
 ## Licensing
 
 Paper and documentation are licensed under CC BY 4.0 unless otherwise noted. Code and build scripts are licensed under the MIT License.
