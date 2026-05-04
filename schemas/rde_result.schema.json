@@ -90,6 +90,22 @@
       "type": ["string", "null"],
       "enum": ["pre_synthetic", "post_structural", null]
     },
+    "evidence_basis": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "tool_risk_rule",
+          "execution_contract",
+          "structural_diff",
+          "semantic_delta",
+          "observed_side_effects",
+          "rollback_result",
+          "human_review_decision",
+          "llm_assisted_semantic_evaluation"
+        ]
+      }
+    },
     "created_at": {
       "type": "string",
       "format": "date-time"

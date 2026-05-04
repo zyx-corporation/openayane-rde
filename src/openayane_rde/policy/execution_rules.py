@@ -65,6 +65,7 @@ def synthetic_rde_for_tool(contract_id: str, risk: ToolCallRisk) -> RDEResult:
         required_action=req,  # type: ignore[arg-type]
         explanation="Synthetic tool-call classification from ToolCallRisk.",
         evaluation_kind="pre_synthetic",
+        evidence_basis=["tool_risk_rule", "execution_contract"],
         metadata={"source": "phase3_execution_gate"},
     )
 

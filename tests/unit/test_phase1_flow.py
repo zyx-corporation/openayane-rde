@@ -66,6 +66,7 @@ def test_flow_markdown_preserved() -> None:
     assert result.generator_output is go
     assert result.relation_context is None
     assert result.audit_event is None
+    assert result.rde_result.evidence_basis == ["structural_diff", "semantic_delta"]
     assert result.structural_diff.contract_id == contract.contract_id  # type: ignore[union-attr]
     decision = result.policy_decision
     assert decision.action == "approve"

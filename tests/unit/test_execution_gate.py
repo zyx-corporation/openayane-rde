@@ -29,6 +29,7 @@ def test_low_risk_read_approve(tmp_path) -> None:
     assert ev.decision.policy_action == "approve"
     assert ev.decision.rde_result is not None
     assert ev.decision.rde_result.evaluation_kind == "pre_synthetic"
+    assert ev.decision.rde_result.evidence_basis == ["tool_risk_rule", "execution_contract"]
 
 
 def test_protected_resource_human_review(tmp_path) -> None:

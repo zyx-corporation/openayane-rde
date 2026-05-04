@@ -65,6 +65,18 @@ RDEClassification = Literal[
 
 # Pre-execution gate uses synthetic classification; Phase 1 / post-exec use structural diff.
 RdeEvaluationKind = Literal["pre_synthetic", "post_structural"]
+
+# What evidence the RDE classification was derived from (orthogonal to evaluation_kind).
+EvidenceBasis = Literal[
+    "tool_risk_rule",
+    "execution_contract",
+    "structural_diff",
+    "semantic_delta",
+    "observed_side_effects",
+    "rollback_result",
+    "human_review_decision",
+    "llm_assisted_semantic_evaluation",
+]
 RiskLevel = Literal["low", "medium", "high", "critical"]
 RequiredAction = Literal[
     "approve",
@@ -419,6 +431,7 @@ class RDEResult(BaseModel):
     score_details: ScoreDetails | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
     evaluation_kind: RdeEvaluationKind | None = None
+    evidence_basis: list[EvidenceBasis] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=now_utc)
 
     model_config = {"extra": "forbid"}

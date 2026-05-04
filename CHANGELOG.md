@@ -5,8 +5,9 @@
 ### Changed
 
 - **Breaking:** `evaluate_before_execution()` returns `ExecutionGateEvaluation` (use `.decision` and `.contract`), not a `(ExecutionGateDecision, ExecutionTaskContract)` tuple.
-- `RDEResult` includes optional `evaluation_kind`: `pre_synthetic` (tool gate) vs `post_structural` (structural diff / Phase 1 pipeline).
-- Phase 1 `run_phase1_evaluation()` sets `evaluation_kind` to `post_structural` on the RDE result when absent, and records it in audit payloads when logging.
+- `RDEResult` includes `evaluation_kind`: `pre_synthetic` (tool gate) vs `post_structural` (structural diff / Phase 1 pipeline).
+- `RDEResult` includes `evidence_basis` (`EvidenceBasis` のリスト): 合成ゲートは `tool_risk_rule` / `execution_contract`、Phase 1／実行後パイプラインは `structural_diff` / `semantic_delta`（`PostExecutionDiff` に副次影響列があれば `observed_side_effects`）。`schemas/rde_result.schema.json` を同期。
+- Phase 1 `run_phase1_evaluation()` sets `evaluation_kind` and `evidence_basis` on the RDE result, and records them in audit payloads when logging.
 
 ### Added
 
@@ -15,7 +16,8 @@
 - Audit helpers in `openayane_rde.audit.log`: `audit_event_execution_gate_evaluated`, `audit_event_tool_execution`, `audit_event_human_review_requested`, `audit_event_human_review_decided`, `append_audit_event`.
 - `ToolExecutionResult.audit_event_id` for correlating SQLite `execution_events` with JSONL audit rows.
 - Golden fixture `fixtures/phase3/golden_execution_gate_audit.json`.
-- `schemas/rde_result.schema.json`: optional `evaluation_kind` (`pre_synthetic` | `post_structural`).
+- `SQLiteRelationStore.applied_schema_versions()` — applied rows in `schema_migrations` (for migration tests / ops).
+- `docs/36_openayane_rde_sqlite_migration_v2_plan.md` — review payload persistence migration plan (GitHub Issue D1).
 
 ### Notes
 
