@@ -1,6 +1,6 @@
 ---
 title: "OpenAyane RDE Phase 3 評価レポート"
-version: "0.1"
+version: "0.2"
 date: "2026-05-04"
 author: "Tomoyuki Kano"
 status: "evaluation report"
@@ -14,6 +14,7 @@ status: "evaluation report"
 対象リポジトリ：`zyx-corporation/openayane-rde`  
 対象ブランチ：`phase3`  
 評価日：2026-05-04  
+最終更新：2026-05-04（ブランチ ahead 数・CI 記述の鮮度修正）  
 評価対象：Phase 3 実装一式  
 関連文書：
 
@@ -26,7 +27,7 @@ status: "evaluation report"
 
 ## 1. 評価概要
 
-`phase3` ブランチは、`main` に対して1コミット進んだ状態であり、Phase 3の最小実装が追加されている。
+`phase3` ブランチは、`main` より Phase 3 実装・ドキュメントを含む複数コミットが積まれた状態である（**`main` からの ahead 数は base の定義で変わる**ため、固定値は本文に書かない。都度 `git rev-list --count main..phase3` 等で確認すること）。
 
 変更内容は、単なる設計文書の追加ではなく、Agent Execution Gate、SQLiteRelationStore、Safe Execution Runtime、Rollback Manager、Human Review Workflow、Optional Semantic Evaluator、および関連テストを含む実装ブランチである。
 
@@ -36,8 +37,8 @@ status: "evaluation report"
 評価結論：Phase 3 MVP としては成立
 成熟度：実装骨格は良好。ただし production-ready ではない
 主な強み：契約化 → リスク評価 → Policy → Gate → Runtime / Review / Rollback の最小ループが成立
-主な弱点：CI未確認、PostExecutionRDE未配線、AuditLog統合不足、synthetic RDEの意味の曖昧さ
-推奨状態：PR化前に評価レポート・バックログ・CI確認を追加し、MVPとしてレビューへ進める
+主な弱点：GitHub Actions 最終確認は PR 単位で残す、PostExecutionRDE未配線、AuditLog統合不足、synthetic RDEの意味の曖昧さ
+推奨状態：PR化前に評価レポート・バックログを揃え、**ローカル CI 相当（pytest / ruff / mypy）通過＋Actions green** を完了条件に含めてレビューへ進める
 ```
 
 Phase 3の実装は、OpenAyane RDEを文書・コード差分評価からAgent実行境界へ拡張するうえで重要な前進である。一方で、現時点の安全性は「保守的に限定されたアプリケーション層制御」であり、完全なsandboxや外部副作用の網羅的制御ではない。
@@ -46,16 +47,29 @@ Phase 3の実装は、OpenAyane RDEを文書・コード差分評価からAgent�
 
 ### 2.1 ブランチ状態
 
+`main` との差分コミット数は **評価時点のスナップショット**であり、レポート本文に固定値を置かない。更新する際はリポジトリで次を実行する。
+
+```bash
+git fetch origin
+git rev-list --count origin/main..phase3   # phase3 が main より何コミット進んでいるか（例）
+git log --oneline origin/main..phase3      # 含まれるコミットの目視
+```
+
 ```text
 repository: zyx-corporation/openayane-rde
 branch: phase3
-base: main
-status: phase3 is ahead of main
-commits ahead: 1
-commits behind: 0
-PR: 未作成
-CI workflow run: 未確認または未実行
-combined status: statusなし
+base: main（比較基準は運用に合わせて origin/main 等に置き換え可）
+status: 通常 phase3 is ahead of main
+PR: 未作成の場合あり
+```
+
+**CI（継続的インテグレーション）**
+
+```text
+- ローカル（CI と同順序の場合）: pytest / ruff check src tests / mypy src
+  本レポート更新時点のワークツリーでは pytest 177 passed を確認済み
+- GitHub Actions: ブランチ push / PR 作成後の workflow run を一次情報とし、
+  結果 URL または run ID を必要に応じて本節へ追記する
 ```
 
 ### 2.2 主要変更領域
@@ -65,6 +79,7 @@ combined status: statusなし
 ```text
 docs/
   - docs/31_openayane_rde_phase3_implementation_report.md
+  - docs/32_openayane_rde_phase3_evaluation_report.md（本書）
 
 schemas/
   - audit_event.schema.json の action enum 拡張
@@ -338,6 +353,17 @@ Phase 3では、Semantic Evaluatorを中核判断にしないことが重要で�
 - LLM adapter導入時はprompt / model / response / evaluator versionを監査対象にする
 ```
 
+### 3.8 既存APIのリネーム（ModificationOutcome）
+
+Phase 3 で **実行結果（ツール実行域）** の `ToolExecutionResult`（仕様上の Post-execution `ExecutionResult` に相当）を導入するにあたり、Phase 1 の **`ExecutionResult`（Policy 駆動の apply / halt / pending の戻り値）** は名称衝突を避けるため **`ModificationOutcome`** にリネームされている（`runtime/modification_control.py` の `apply_or_halt`）。
+
+```text
+影響:
+  - パッケージ外で旧型名 ExecutionResult を import しているコードは破壊的変更
+対応:
+  - ModificationOutcome へ置換し、ツール実行結果には ToolExecutionResult を用いる
+```
+
 ## 4. RDE観点での評価
 
 ### 4.1 保存された要素
@@ -402,7 +428,7 @@ Phase 3で補完された要素は以下である。
 - git_patch_reverse rollback
 - Human ReviewのUI / CLI
 - ReviewDecisionとauthority / PoP-UIDの接続
-- CI上でのPhase 3テスト確認
+- GitHub Actions 上での Phase 3 ブランチ最終確認（ローカル通過後のリモート検証）
 - Golden fixtures整備
 ```
 
@@ -495,7 +521,7 @@ Phase 3では、unit testとintegration testが追加されている。
 - ExecutionRollback integration
 ```
 
-ただし、CI結果は未確認であるため、テストが実際に通っているとはまだ断定しない。
+**ローカル**では CI と同様のコマンド（pytest / ruff / mypy）が通過している（本書更新時点で pytest は 177 passed）。**リモート**では GitHub Actions の結果を PR または push 後に確認し、本節に green / 失敗の要約を追記するとよい。
 
 不足しているテストは以下である。
 
@@ -515,12 +541,13 @@ Phase 3では、unit testとintegration testが追加されている。
 ### 6.1 P0：PR前に確認すべき項目
 
 ```text
-1. pytestを通す
+1. pytestを通す（ローカルで確認済みなら PR 説明に記載）
 2. ruffを通す
 3. mypyを通す
 4. schemas/audit_event.schema.json と AuditActionKind の同期を確認する
 5. phase3 branchのPRを作成する
 6. docs/31とdocs/32の評価内容が矛盾しないか確認する
+7. GitHub Actions の workflow run が green であることを確認し、必要なら本レポート §2.1 に追記する
 ```
 
 ### 6.2 P1：Phase 3 MVP完了ラインに必要な項目
@@ -563,7 +590,7 @@ Phase 3は、OpenAyane RDEの実装上の重要な節目である。
 
 これは、RDEを単なる評価レポート生成器に留めず、Agent実行の制度的境界へ押し出す実装である。
 
-ただし、現時点で完成しているのは「境界の骨格」であり、「運用安全性の完成」ではない。とくに、synthetic RDEの位置づけ、AuditLog統合、PostExecutionRDE、Human Reviewの判断材料、rollbackの網羅性、CI確認は次の焦点である。
+ただし、現時点で完成しているのは「境界の骨格」であり、「運用安全性の完成」ではない。とくに、synthetic RDEの位置づけ、AuditLog統合、PostExecutionRDE、Human Reviewの判断材料、rollbackの網羅性、**GitHub Actions 上の最終確認（PR 単位）**は次の焦点である。
 
 結論として、Phase 3はMVPとして採用可能である。ただし、PRレビュー時には以下の条件を明示するべきである。
 
@@ -573,7 +600,7 @@ Phase 3は、OpenAyane RDEの実装上の重要な節目である。
 - synthetic RDEは本来のStructural/Semantic RDEではない
 - external side effectは原則human_review以上
 - rollbackはfile_snapshot中心の初期実装である
-- CI通過を完了条件に含める
+- ローカル CI 相当の通過と GitHub Actions green を完了条件に含める
 ```
 
 ## 8. RDE差異検証
@@ -651,5 +678,5 @@ Phase 3は、OpenAyane RDEの実装上の重要な節目である。
 3. synthetic RDEの位置づけをモデル・文書に反映する
 4. AuditLog execution helperの仕様を追加する
 5. PostExecutionRDE接続仕様を追加する
-6. PRを作成し、CI結果を評価レポートへ追記する
+6. PRを作成し、GitHub Actions の結果（URL または要約）を評価レポート §2.1 / §5 へ追記する
 ```
