@@ -2,7 +2,7 @@
 \documentclass[11pt,a4paper]{article}
 \usepackage{amsmath,amssymb}
 \usepackage{graphicx}
-\graphicspath{{figures/}{paper/figures/}}
+\graphicspath{{figures/}}
 \usepackage{geometry}
 \usepackage{hyperref}
 \usepackage{xcolor}
@@ -12,7 +12,23 @@
 \usepackage{fontspec}
 \usepackage{xeCJK}
 \geometry{margin=25mm}
-\IfFontExistsTF{HaranoAjiMincho-Regular.otf}{\setCJKmainfont{HaranoAjiMincho-Regular.otf}\setCJKsansfont{HaranoAjiGothic-Regular.otf}}{\IfFontExistsTF{Noto Serif CJK JP}{\setCJKmainfont{Noto Serif CJK JP}\setCJKsansfont{Noto Sans CJK JP}}{\IfFontExistsTF{Hiragino Mincho ProN}{\setCJKmainfont{Hiragino Mincho ProN}\setCJKsansfont{Hiragino Sans}}{\setCJKmainfont{IPAMincho}\setCJKsansfont{IPAGothic}}}}
+\IfFontExistsTF{HaranoAjiMincho-Regular.otf}{%
+  \setCJKmainfont[AutoFakeBold=2.5]{HaranoAjiMincho-Regular.otf}%
+  \setCJKsansfont[AutoFakeBold=2.5]{HaranoAjiGothic-Regular.otf}%
+}{%
+  \IfFontExistsTF{Noto Serif CJK JP}{%
+    \setCJKmainfont{Noto Serif CJK JP}%
+    \setCJKsansfont{Noto Sans CJK JP}%
+  }{%
+    \IfFontExistsTF{Hiragino Mincho ProN}{%
+      \setCJKmainfont{Hiragino Mincho ProN}%
+      \setCJKsansfont{Hiragino Sans}%
+    }{%
+      \setCJKmainfont[AutoFakeBold=2.5]{IPAMincho}%
+      \setCJKsansfont[AutoFakeBold=2.5]{IPAGothic}%
+    }%
+  }%
+}
 \hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue,pdftitle={OpenAyane Implementation Plan},pdfauthor={Tomoyuki Kano}}
 \lstset{basicstyle=\ttfamily\small,breaklines=true,frame=single}
 \title{OpenAyaneの実装計画\\\large RDE評価器に基づく意味変化監査機構の設計と段階的実装}
