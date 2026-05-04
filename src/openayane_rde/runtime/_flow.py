@@ -5,7 +5,7 @@ Implements the minimal flow described in phase1_implementation_plan.md Section 5
     structural_diff = run_structural_diff(original, generated_output, task_contract)
     semantic_delta = semantic_delta_stub(structural_diff)
     rde_result = evaluate_rde(task_contract, structural_diff, semantic_delta, generated_output)
-    policy_decision = decide_policy(rde_result, task_contract)
+    policy_decision = decide_policy(rde_result, task_contract, relation_context)
     audit_event = write_audit_event(...)  # optional, when logging
     return Phase1EvaluationResult(...)
 """
@@ -113,7 +113,7 @@ def run_phase1_evaluation(
         relation_context=relation_context,
     )
 
-    policy_decision = decide_policy(rde_result, task_contract)
+    policy_decision = decide_policy(rde_result, task_contract, relation_context)
 
     audit_event: AuditEvent | None = None
     if audit_log_path is not None:

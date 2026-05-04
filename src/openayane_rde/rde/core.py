@@ -61,6 +61,7 @@ def evaluate_rde(
         self_report_mismatch_score=mismatch,
         structural_diff=structural_diff,
         contract=contract,
+        semantic_delta=semantic_delta,
     )
 
     violated_constraints = _build_violated_constraints(structural_diff, contract)

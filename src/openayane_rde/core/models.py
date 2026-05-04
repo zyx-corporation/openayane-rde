@@ -99,6 +99,28 @@ PolicyActionKind = Literal[
     "rollback",
 ]
 
+RelationType = Literal[
+    "generator-document",
+    "agent-document",
+    "user-agent",
+    "tool-workspace",
+    "domain-policy",
+]
+
+DriftPatternKind = Literal[
+    "citation_weakening",
+    "citation_deletion",
+    "number_change",
+    "definition_shift",
+    "constraint_omission",
+    "schema_key_deletion",
+    "required_field_deletion",
+    "signature_change",
+    "test_deletion",
+    "self_report_mismatch",
+    "other",
+]
+
 # ---------------------------------------------------------------------------
 # TaskContract
 # ---------------------------------------------------------------------------
@@ -398,7 +420,79 @@ class RelationContext(BaseModel):
     interaction_count: int = 0
     last_delta_m: float = 0.0
     drift_patterns: list[str] = Field(default_factory=list)
+    review_threshold_adjustment: float = Field(default=0.0, ge=0.0, le=1.0)
+    generator_reliability_score: float | None = Field(default=None, ge=0.0, le=1.0)
+    document_fragility_score: float | None = Field(default=None, ge=0.0, le=1.0)
     last_updated_at: datetime | None = None
+
+    model_config = {"extra": "forbid"}
+
+
+class DriftPattern(BaseModel):
+    pattern_id: str = Field(default_factory=lambda: new_id("dp"))
+    kind: DriftPatternKind
+    count: int = 1
+    severity: RiskLevel = "medium"
+    examples: list[str] = Field(default_factory=list)
+    last_seen_at: datetime = Field(default_factory=now_utc)
+
+    model_config = {"extra": "forbid"}
+
+
+class GeneratorReliabilityProfile(BaseModel):
+    generator_id: str
+    total_outputs: int = 0
+    self_report_mismatch_count: int = 0
+    critical_corruption_count: int = 0
+    suspicious_drift_count: int = 0
+    preserved_count: int = 0
+    authorized_deviation_count: int = 0
+    reliability_score: float = Field(default=1.0, ge=0.0, le=1.0)
+
+    model_config = {"extra": "forbid"}
+
+
+class DocumentFragilityProfile(BaseModel):
+    document_id: str
+    total_edits: int = 0
+    protected_change_count: int = 0
+    citation_break_count: int = 0
+    number_change_count: int = 0
+    definition_shift_count: int = 0
+    fragility_score: float = Field(default=0.0, ge=0.0, le=1.0)
+
+    model_config = {"extra": "forbid"}
+
+
+class RelationStoreRecord(BaseModel):
+    relation_id: str = Field(default_factory=lambda: new_id("rel"))
+    subject_id: str
+    object_id: str
+    relation_type: RelationType = "generator-document"
+    trust: float = Field(default=0.5, ge=0.0, le=1.0)
+    stability: float = Field(default=0.5, ge=0.0, le=1.0)
+    context_affinity: float = Field(default=0.5, ge=0.0, le=1.0)
+    interaction_count: int = 0
+    critical_corruption_count: int = 0
+    suspicious_drift_count: int = 0
+    self_report_mismatch_count: int = 0
+    drift_patterns: list[DriftPattern] = Field(default_factory=list)
+    generator_reliability_profile: GeneratorReliabilityProfile | None = None
+    document_fragility_profile: DocumentFragilityProfile | None = None
+    review_threshold_adjustment: float = Field(default=0.0, ge=0.0, le=1.0)
+    last_delta_m: float = 0.0
+    last_audit_event_id: str | None = None
+    updated_at: datetime = Field(default_factory=now_utc)
+
+    model_config = {"extra": "forbid"}
+
+
+class AllowedDeltaMatchResult(BaseModel):
+    matched_changes: list[str] = Field(default_factory=list)
+    unmatched_changes: list[str] = Field(default_factory=list)
+    forbidden_matches: list[str] = Field(default_factory=list)
+    match_score: float = Field(default=0.0, ge=0.0, le=1.0)
+    explanation: str = ""
 
     model_config = {"extra": "forbid"}
 
@@ -408,6 +502,14 @@ class RelationUpdateSummary(BaseModel):
 
     context: RelationContext
     updated: bool = False
+    relation_id: str | None = None
+    trust_before: float | None = None
+    trust_after: float | None = None
+    stability_before: float | None = None
+    stability_after: float | None = None
+    review_threshold_adjustment_before: float | None = None
+    review_threshold_adjustment_after: float | None = None
+    updated_patterns: list[str] = Field(default_factory=list)
     message: str = ""
 
     model_config = {"extra": "forbid"}

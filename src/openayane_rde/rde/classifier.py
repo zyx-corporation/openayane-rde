@@ -17,9 +17,11 @@ from openayane_rde.core.models import (
     RDEClassification,
     RequiredAction,
     RiskLevel,
+    SemanticDelta,
     StructuralDiff,
     TaskContract,
 )
+from openayane_rde.rde.authorization import match_allowed_delta
 
 
 def classify(
@@ -29,6 +31,7 @@ def classify(
     self_report_mismatch_score: float,
     structural_diff: StructuralDiff,
     contract: TaskContract,
+    semantic_delta: SemanticDelta,
 ) -> tuple[RDEClassification, RiskLevel, RequiredAction]:
     """Classify the deviation and return (classification, risk_level, required_action).
 
@@ -37,7 +40,12 @@ def classify(
     2. suspicious_drift – protected change exists or high mismatch
     3. authorized_deviation – changes exist but within allowed scope
     4. preserved – no meaningful change detected
+
+    Phase 2: ``match_allowed_delta`` downgrades weak keyword matches from
+    authorized_deviation; forbidden phrase hits route to suspicious_drift.
     """
+    auth_match = match_allowed_delta(structural_diff, semantic_delta, contract)
+
     has_critical_protected = any(
         pc.risk_hint in ("critical",)
         for pc in structural_diff.protected_element_changes
@@ -50,6 +58,10 @@ def classify(
 
     if has_critical_protected or has_schema_violation or has_critical_mismatch:
         return "critical_corruption", "critical", "halt"
+
+    if auth_match.forbidden_matches:
+        risk = _compute_risk(structural_risk_score)
+        return "suspicious_drift", risk, "human_review"
 
     has_any_protected_change = len(structural_diff.protected_element_changes) > 0
     has_high_mismatch = self_report_mismatch_score >= 0.4
@@ -65,6 +77,8 @@ def classify(
     )
 
     if total_changes > 0 and contract.allowed_delta_m:
+        if auth_match.match_score < 0.25:
+            return "suspicious_drift", "medium", "human_review"
         return "authorized_deviation", "low", "approve_with_notes"
 
     if total_changes > 0 and not contract.allowed_delta_m:

@@ -1,7 +1,7 @@
 ---
 title: "OpenAyane RDE Phase 2 仕様メモ（ドラフト）"
 date: "2026-05-04"
-status: "draft"
+status: "draft (baseline implementation in repo; extend per roadmap)"
 ---
 
 # OpenAyane RDE Phase 2 仕様メモ（ドラフト）

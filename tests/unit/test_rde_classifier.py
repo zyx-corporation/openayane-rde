@@ -122,7 +122,7 @@ def test_authorized_deviation_with_allowed_delta() -> None:
                 kind="paragraph",
                 before="Foo bar baz.",
                 after="Bar baz foo.",
-                description="Paragraph restructured.",
+                description="Paragraph sentence restructuring applied.",
                 risk_hint="low",
             )
         ],

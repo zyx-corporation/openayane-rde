@@ -1,12 +1,10 @@
 """OpenAyane RDE: structural and semantic deviation evaluation for generative systems.
 
-Phase 1 provides:
-  - TaskContract / GeneratorOutput / StructuralDiff / RDEResult / PolicyDecision / AuditEvent models
-  - MarkdownDiff, JsonDiff, PythonAstDiff structural diff engines
-  - Minimal RDE classifier and Policy Bridge
-  - Append-only AuditLog (JSONL)
-  - Phase 1 runtime flow: run_phase1_evaluation() -> Phase1EvaluationResult
-  - Relation hook: update_relation_from_evaluation_result() (Phase 1 stub)
+Phase 1 provides structural diff, RDE, policy, audit, and Phase1EvaluationResult.
+
+Phase 2 adds JSON RelationStore, relation updates from audited evaluations,
+allowed_delta keyword matching, enriched SemanticDelta extraction, and policy
+adjustments from RelationContext history signals.
 """
 
 from __future__ import annotations
@@ -17,11 +15,13 @@ from openayane_rde.core.models import (
     PolicyDecision,
     RDEResult,
     RelationContext,
+    RelationStoreRecord,
     RelationUpdateSummary,
     SemanticDelta,
     StructuralDiff,
     TaskContract,
 )
+from openayane_rde.relation.store import JSONRelationStore
 from openayane_rde.relation.update import update_relation_from_evaluation_result
 from openayane_rde.runtime._flow import run_phase1_evaluation
 from openayane_rde.runtime.result import Phase1EvaluationResult
@@ -35,7 +35,9 @@ __all__ = [
     "PolicyDecision",
     "AuditEvent",
     "RelationContext",
+    "RelationStoreRecord",
     "RelationUpdateSummary",
+    "JSONRelationStore",
     "Phase1EvaluationResult",
     "run_phase1_evaluation",
     "update_relation_from_evaluation_result",

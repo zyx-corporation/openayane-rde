@@ -9,20 +9,21 @@ Initial mapping:
 
 from __future__ import annotations
 
-from openayane_rde.core.models import PolicyDecision, RDEResult, TaskContract
+from openayane_rde.core.models import PolicyDecision, RelationContext, RDEResult, TaskContract
 from openayane_rde.policy.rules import decide_action
 
 
 def decide_policy(
     rde_result: RDEResult,
     contract: TaskContract,
+    relation_context: RelationContext | None = None,
 ) -> PolicyDecision:
     """Convert RDEResult into a PolicyDecision.
 
     critical_corruption classification always results in halt.
     Other classifications use the review_policy from the TaskContract.
     """
-    action = decide_action(rde_result, contract)
+    action = decide_action(rde_result, contract, relation_context)
     rationale = _build_rationale(rde_result, action)
 
     return PolicyDecision(
