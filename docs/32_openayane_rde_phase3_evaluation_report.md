@@ -672,11 +672,12 @@ Phase 3は、OpenAyane RDEの実装上の重要な節目である。
 
 次回更新では、以下を実施する。
 
+**本番準備のロードマップ**は `docs/33_openayane_rde_phase3_production_readiness_plan.md`（レベル L0–L3、Wave A–E、Exit criteria）に集約する。
+
 ```text
-1. docs/33_openayane_rde_phase3_backlog.md を作成する
-2. P0/P1/P2/P3の課題をIssue化またはチェックリスト化する
-3. synthetic RDEの位置づけをモデル・文書に反映する
-4. AuditLog execution helperの仕様を追加する
-5. PostExecutionRDE接続仕様を追加する
-6. PRを作成し、GitHub Actions の結果（URL または要約）を評価レポート §2.1 / §5 へ追記する
+1. docs/33 の Wave を Issue 化またはチェックリスト化する（P0/P1/P2/P3 と対応付け可能）
+2. synthetic RDEの位置づけをモデル・文書に反映する
+3. AuditLog execution helperの仕様を追加する
+4. PostExecutionRDE接続仕様を追加する
+5. PRを作成し、GitHub Actions の結果（URL または要約）を評価レポート §2.1 / §5 へ追記する
 ```
