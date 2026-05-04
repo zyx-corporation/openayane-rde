@@ -8,6 +8,8 @@
 - `RDEResult` includes `evaluation_kind`: `pre_synthetic` (tool gate) vs `post_structural` (structural diff / Phase 1 pipeline).
 - `RDEResult` includes `evidence_basis` (`EvidenceBasis` のリスト): 合成ゲートは `tool_risk_rule` / `execution_contract`、Phase 1／実行後パイプラインは `structural_diff` / `semantic_delta`（`PostExecutionDiff` に副次影響列があれば `observed_side_effects`）。`schemas/rde_result.schema.json` を同期。
 - Phase 1 `run_phase1_evaluation()` sets `evaluation_kind` and `evidence_basis` on the RDE result, and records them in audit payloads when logging.
+- `SafeExecutionRuntime` now supports allowlisted subprocess execution with effective timeout (`subprocess.run(..., timeout=...)`), returning `timed_out` when the process is terminated by timeout.
+- `ExecutionTaskContract` now includes `external_side_effect_kind` and `allowed_network_domains`; tool risk scoring and gate policy use the taxonomy (`read_only_fetch`, `state_changing_request`, `payment_or_billing`, `data_exfiltration_risk`, etc.).
 
 ### Added
 

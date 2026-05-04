@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from openayane_rde.agent.tool_contract import build_execution_task_contract
-from openayane_rde.core.models import ToolCallRequest
+from openayane_rde.core.models import ExecutionTaskContract, ToolCallRequest
 from openayane_rde.core.time import now_utc
 from openayane_rde.runtime.safe_execution import SafeExecutionRuntime
 
@@ -39,7 +39,6 @@ def test_dry_run_write_no_file_change(tmp_path: Path) -> None:
 
 
 def test_network_blocked() -> None:
-    from openayane_rde.core.models import ExecutionTaskContract
     from openayane_rde.core.time import now_utc as nu
 
     c = ExecutionTaskContract(
@@ -61,6 +60,83 @@ def test_network_blocked() -> None:
     rt = SafeExecutionRuntime(Path("."))
     r = rt.execute(c, tc)
     assert r.status == "blocked"
+
+
+def test_execute_blocked_by_default_policy(tmp_path: Path) -> None:
+    tc = ToolCallRequest(
+        tool_call_id="x1",
+        agent_id="a",
+        tool_name="bash",
+        action_name="run",
+        arguments={"command": "echo hello"},
+        created_at=now_utc(),
+    )
+    c = build_execution_task_contract(tc)
+    rt = SafeExecutionRuntime(tmp_path)
+    r = rt.execute(c, tc)
+    assert r.status == "blocked"
+    assert r.error_message == "subprocess_disabled"
+
+
+def test_execute_allowlisted_command_runs(tmp_path: Path) -> None:
+    tc = ToolCallRequest(
+        tool_call_id="x2",
+        agent_id="a",
+        tool_name="bash",
+        action_name="run",
+        arguments={"command": "echo ok"},
+        created_at=now_utc(),
+    )
+    c = build_execution_task_contract(tc).model_copy(update={"max_runtime_ms": 1000})
+    rt = SafeExecutionRuntime(
+        tmp_path,
+        allow_subprocess_execution=True,
+        subprocess_allowlist={"echo": [r"^ok$"]},
+    )
+    r = rt.execute(c, tc)
+    assert r.status == "completed"
+    assert (r.stdout or "").strip() == "ok"
+
+
+def test_execute_not_allowlisted_blocked(tmp_path: Path) -> None:
+    tc = ToolCallRequest(
+        tool_call_id="x3",
+        agent_id="a",
+        tool_name="bash",
+        action_name="run",
+        arguments={"command": "echo nope"},
+        created_at=now_utc(),
+    )
+    c = build_execution_task_contract(tc)
+    rt = SafeExecutionRuntime(
+        tmp_path,
+        allow_subprocess_execution=True,
+        subprocess_allowlist={"echo": [r"^ok$"]},
+    )
+    r = rt.execute(c, tc)
+    assert r.status == "blocked"
+    assert r.error_message == "command_not_allowlisted"
+
+
+def test_execute_timeout_returns_timed_out(tmp_path: Path) -> None:
+    py = sys.executable
+    tc = ToolCallRequest(
+        tool_call_id="x4",
+        agent_id="a",
+        tool_name="bash",
+        action_name="run",
+        arguments={"command": f"{py} -c \"import time; time.sleep(0.2)\""},
+        created_at=now_utc(),
+    )
+    c = build_execution_task_contract(tc).model_copy(update={"max_runtime_ms": 50})
+    rt = SafeExecutionRuntime(
+        tmp_path,
+        allow_subprocess_execution=True,
+        subprocess_allowlist={py: [r"time\.sleep"]},
+    )
+    r = rt.execute(c, tc)
+    assert r.status == "timed_out"
+    assert r.error_message == "process_timeout_killed"
 
 
 def test_path_traversal_dotdot_blocked(tmp_path: Path) -> None:

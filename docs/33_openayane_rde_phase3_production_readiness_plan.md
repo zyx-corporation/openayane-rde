@@ -1,6 +1,6 @@
 ---
 title: "OpenAyane RDE Phase 3 production-ready 制約解消計画"
-version: "0.5"
+version: "0.6"
 date: "2026-05-04"
 status: "in_progress"
 ---
@@ -251,9 +251,9 @@ Wave B のL1必須部分はクローズ可能。B5 の実装は L2／UI 要件�
 
 | ID | タスク | 完了条件（例） | 状態 |
 |----|--------|----------------|------|
-| C1 | `max_runtime_ms` をプロセス kill で実装 | 長時間 sleep テストで `timed_out` | **未** |
-| C2 | subprocess allowlist（コマンド・引数パターン） | ホワイトリスト外は `blocked` | **未** |
-| C3 | `external_side_effect_kind` を導入 | HTTP実行前に外部副作用を分類可能 | **未** |
+| C1 | `max_runtime_ms` をプロセス kill で実装 | 長時間 sleep テストで `timed_out` | **完了**（`SafeExecutionRuntime` の `subprocess.run(..., timeout=...)` + `timed_out` テスト） |
+| C2 | subprocess allowlist（コマンド・引数パターン） | ホワイトリスト外は `blocked` | **完了**（ランタイム既定は無効、allowlist 指定時のみ実行） |
+| C3 | `external_side_effect_kind` を導入 | HTTP実行前に外部副作用を分類可能 | **完了**（`ExecutionTaskContract.external_side_effect_kind`、リスク評価・ゲート分岐・テスト） |
 | C4 | HTTP クライアントを「プロキシ＋許可ドメイン」に限定 | contract の `network_allowed` と `external_side_effect_kind` が整合 | **未** |
 | C5 | path 攻撃系テスト | symlink、 `..` 逸脱 | **一部完了**（`tests/unit/test_safe_execution_runtime.py`。Windows は symlink テスト skip。TOCTOU は未） |
 
@@ -445,3 +445,4 @@ L2 を宣言するには、さらに **C1–C4**（実効 timeout、allowlist、
 | 0.3 | 2026-05-04 | 実装済み内容を本文に反映（§0.1 サマリ、§2 進捗列、Wave A–C 状態列、§5 Exit チェック表、§7 更新）。 |
 | 0.4 | 2026-05-04 | 評価指摘を反映（L1＝internal-pilot ready、provenance 設計、`external_side_effect_kind`、Issue 粒度）。A5 `evidence_basis` 実装、D1 計画 `docs/36`、B5 判断を §11 に記録。 |
 | 0.5 | 2026-05-04 | A5 実装を本文・Wave 表・Exit と整合（§12）。§11／§12 の番号整理。 |
+| 0.6 | 2026-05-04 | C1/C2/C3 実装反映（runtime timeout kill、subprocess allowlist、external_side_effect_kind）。Wave C 状態更新。 |

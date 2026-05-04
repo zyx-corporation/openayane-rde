@@ -95,6 +95,17 @@ def decide_execution_policy_action(
     if cfg.require_review_for_protected_resources and risk.protected_resource_touched:
         return "human_review", "Protected resource touched."
 
+    if rde is not None and "execution_contract" in rde.evidence_basis:
+        kind = rde.metadata.get("external_side_effect_kind")
+        if kind == "payment_or_billing":
+            return "halt", "External side effect payment_or_billing."
+        if kind == "data_exfiltration_risk":
+            return "halt", "External side effect data_exfiltration_risk."
+        if kind in ("state_changing_request", "notification", "publishing", "identity_or_auth"):
+            return "human_review", f"External side effect {kind}."
+        if kind == "unknown":
+            return "human_review", "External side effect unknown."
+
     if cfg.require_review_for_external_side_effects and risk.external_side_effect:
         return "human_review", "External side effect."
 

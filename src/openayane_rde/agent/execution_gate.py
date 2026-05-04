@@ -49,6 +49,14 @@ def evaluate_before_execution(
         raw_arguments=tool_call.arguments,
     )
     rde = synthetic_rde_for_tool(contract.contract_id, risk)
+    rde = rde.model_copy(
+        update={
+            "metadata": {
+                **rde.metadata,
+                "external_side_effect_kind": contract.external_side_effect_kind,
+            }
+        }
+    )
     rc = relation_store.load_context(subject_id, object_id, relation_type)
     action, reason = decide_execution_policy_action(risk, rde, rc, policy_config)
     gate = ExecutionGateDecision(

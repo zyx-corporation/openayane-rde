@@ -148,6 +148,18 @@ ExecutionActionType = Literal[
     "repository_patch",
     "unknown",
 ]
+ExternalSideEffectKind = Literal[
+    "none",
+    "read_only_fetch",
+    "state_changing_request",
+    "notification",
+    "publishing",
+    "payment_or_billing",
+    "identity_or_auth",
+    "data_exfiltration_risk",
+    "legal_or_compliance_effect",
+    "unknown",
+]
 
 RollbackStrategyKind = Literal[
     "none",
@@ -654,6 +666,8 @@ class ExecutionTaskContract(BaseModel):
     max_runtime_ms: int | None = None
     max_output_bytes: int | None = None
     network_allowed: bool = False
+    external_side_effect_kind: ExternalSideEffectKind = "none"
+    allowed_network_domains: list[str] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=now_utc)
 
     model_config = {"extra": "forbid"}

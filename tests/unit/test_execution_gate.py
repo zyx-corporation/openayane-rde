@@ -93,3 +93,63 @@ def test_low_trust_medium_write_human_review(tmp_path) -> None:
         object_id="o",
     )
     assert ev.decision.policy_action in ("human_review", "dry_run_only")
+
+
+def test_external_read_only_fetch_human_review_without_allowlist(tmp_path) -> None:
+    store = JSONRelationStore(tmp_path / "j5.json")
+    tc = ToolCallRequest(
+        tool_call_id="5",
+        agent_id="a",
+        tool_name="http_client",
+        action_name="fetch",
+        arguments={"method": "GET", "url": "https://example.com/data"},
+        created_at=now_utc(),
+    )
+    ev = evaluate_before_execution(tc, store, ExecutionPolicyConfig())
+    assert ev.contract.external_side_effect_kind == "read_only_fetch"
+    assert ev.decision.policy_action == "human_review"
+
+
+def test_external_state_changing_request_human_review(tmp_path) -> None:
+    store = JSONRelationStore(tmp_path / "j6.json")
+    tc = ToolCallRequest(
+        tool_call_id="6",
+        agent_id="a",
+        tool_name="http_client",
+        action_name="fetch",
+        arguments={"method": "POST", "url": "https://example.com/api"},
+        created_at=now_utc(),
+    )
+    ev = evaluate_before_execution(tc, store, ExecutionPolicyConfig())
+    assert ev.contract.external_side_effect_kind == "state_changing_request"
+    assert ev.decision.policy_action == "human_review"
+
+
+def test_external_data_exfiltration_risk_halt(tmp_path) -> None:
+    store = JSONRelationStore(tmp_path / "j7.json")
+    tc = ToolCallRequest(
+        tool_call_id="7",
+        agent_id="a",
+        tool_name="http_client",
+        action_name="fetch",
+        arguments={"method": "POST", "url": "https://example.com/export", "note": "upload_dump"},
+        created_at=now_utc(),
+    )
+    ev = evaluate_before_execution(tc, store, ExecutionPolicyConfig())
+    assert ev.contract.external_side_effect_kind == "data_exfiltration_risk"
+    assert ev.decision.policy_action == "halt"
+
+
+def test_external_unknown_human_review(tmp_path) -> None:
+    store = JSONRelationStore(tmp_path / "j8.json")
+    tc = ToolCallRequest(
+        tool_call_id="8",
+        agent_id="a",
+        tool_name="http_client",
+        action_name="fetch",
+        arguments={"payload": "opaque-no-url-no-method"},
+        created_at=now_utc(),
+    )
+    ev = evaluate_before_execution(tc, store, ExecutionPolicyConfig())
+    assert ev.contract.external_side_effect_kind == "unknown"
+    assert ev.decision.policy_action == "human_review"
