@@ -168,6 +168,16 @@ class SQLiteRelationStore:
                     (SCHEMA_VERSION, "phase3_initial", now_utc().isoformat()),
                 )
 
+    def applied_schema_versions(self) -> list[int]:
+        """Ordered list of applied schema migration versions (see ``schema_migrations``)."""
+
+        self.initialize()
+        with self._connect() as conn:
+            rows = conn.execute(
+                "SELECT version FROM schema_migrations ORDER BY version ASC"
+            ).fetchall()
+        return [int(r[0]) for r in rows]
+
     def _metadata_pack(self, record: RelationStoreRecord) -> dict[str, Any]:
         meta: dict[str, Any] = {}
         if record.self_report_mismatch_item_count:

@@ -1,7 +1,10 @@
-"""Safe Execution Runtime — limited file/shell simulation (Phase 3)."""
+"""Safe Execution Runtime — bounded file/subprocess execution (Phase 3)."""
 
 from __future__ import annotations
 
+import re
+import shlex
+import subprocess
 import time
 from pathlib import Path
 
@@ -34,8 +37,16 @@ def _truncate(s: str, max_bytes: int | None) -> str:
 class SafeExecutionRuntime:
     """Application-level safe execution (not a full OS sandbox)."""
 
-    def __init__(self, workspace_root: str | Path) -> None:
+    def __init__(
+        self,
+        workspace_root: str | Path,
+        *,
+        allow_subprocess_execution: bool = False,
+        subprocess_allowlist: dict[str, list[str]] | None = None,
+    ) -> None:
         self.workspace_root = Path(workspace_root).resolve()
+        self.allow_subprocess_execution = allow_subprocess_execution
+        self.subprocess_allowlist = subprocess_allowlist or {}
 
     def execute(
         self,
@@ -77,16 +88,7 @@ class SafeExecutionRuntime:
             )
 
         if contract.action_type == "execute":
-            return ToolExecutionResult(
-                contract_id=contract.contract_id,
-                tool_call_id=tool_call.tool_call_id,
-                status="blocked" if not dry_run else "dry_run_completed",
-                stdout=None if not dry_run else "dry-run: shell execution not performed",
-                stderr=None if not dry_run else "Shell execution is not run in Phase 3 minimal runtime.",
-                started_at=started,
-                completed_at=now_utc(),
-                rollback_plan_id=rollback_plan.rollback_plan_id if rollback_plan else None,
-            )
+            return self._execute_subprocess(contract, tool_call, rollback_plan, dry_run=dry_run)
 
         # File-oriented simulation for read/write/delete
         target = contract.target_resources[0] if contract.target_resources else ""
@@ -184,3 +186,131 @@ class SafeExecutionRuntime:
             started_at=started,
             completed_at=now_utc(),
         )
+
+    def _execute_subprocess(
+        self,
+        contract: ExecutionTaskContract,
+        tool_call: ToolCallRequest,
+        rollback_plan: RollbackPlan | None,
+        *,
+        dry_run: bool,
+    ) -> ToolExecutionResult:
+        started = now_utc()
+        max_out = contract.max_output_bytes or 64_000
+        command_raw = str(tool_call.arguments.get("command") or tool_call.arguments.get("cmd") or "")
+
+        if dry_run:
+            return ToolExecutionResult(
+                contract_id=contract.contract_id,
+                tool_call_id=tool_call.tool_call_id,
+                status="dry_run_completed",
+                stdout=f"dry-run: would execute `{command_raw}`",
+                started_at=started,
+                completed_at=now_utc(),
+                rollback_plan_id=rollback_plan.rollback_plan_id if rollback_plan else None,
+            )
+
+        if not self.allow_subprocess_execution:
+            return ToolExecutionResult(
+                contract_id=contract.contract_id,
+                tool_call_id=tool_call.tool_call_id,
+                status="blocked",
+                stderr="Subprocess execution is disabled by runtime policy.",
+                started_at=started,
+                completed_at=now_utc(),
+                error_message="subprocess_disabled",
+                rollback_plan_id=rollback_plan.rollback_plan_id if rollback_plan else None,
+            )
+
+        try:
+            argv = shlex.split(command_raw)
+        except ValueError as exc:
+            return ToolExecutionResult(
+                contract_id=contract.contract_id,
+                tool_call_id=tool_call.tool_call_id,
+                status="failed",
+                stderr=f"Invalid command: {exc}",
+                started_at=started,
+                completed_at=now_utc(),
+                error_message="invalid_command",
+            )
+
+        if not argv:
+            return ToolExecutionResult(
+                contract_id=contract.contract_id,
+                tool_call_id=tool_call.tool_call_id,
+                status="blocked",
+                stderr="Empty command.",
+                started_at=started,
+                completed_at=now_utc(),
+                error_message="empty_command",
+            )
+
+        if not self._allowlisted(argv):
+            return ToolExecutionResult(
+                contract_id=contract.contract_id,
+                tool_call_id=tool_call.tool_call_id,
+                status="blocked",
+                stderr="Command is not allowlisted by runtime policy.",
+                started_at=started,
+                completed_at=now_utc(),
+                error_message="command_not_allowlisted",
+            )
+
+        timeout_s = max(0.001, (contract.max_runtime_ms or 60_000) / 1000.0)
+        try:
+            completed = subprocess.run(
+                argv,
+                cwd=self.workspace_root,
+                capture_output=True,
+                text=True,
+                timeout=timeout_s,
+                check=False,
+            )
+            if completed.returncode == 0:
+                return ToolExecutionResult(
+                    contract_id=contract.contract_id,
+                    tool_call_id=tool_call.tool_call_id,
+                    status="completed",
+                    exit_code=completed.returncode,
+                    stdout=_truncate(completed.stdout or "", max_out),
+                    stderr=_truncate(completed.stderr or "", max_out),
+                    started_at=started,
+                    completed_at=now_utc(),
+                )
+            return ToolExecutionResult(
+                contract_id=contract.contract_id,
+                tool_call_id=tool_call.tool_call_id,
+                status="failed",
+                exit_code=completed.returncode,
+                stdout=_truncate(completed.stdout or "", max_out),
+                stderr=_truncate(completed.stderr or "", max_out),
+                started_at=started,
+                completed_at=now_utc(),
+            )
+        except subprocess.TimeoutExpired as exc:
+            stdout = exc.stdout if isinstance(exc.stdout, str) else ""
+            stderr = exc.stderr if isinstance(exc.stderr, str) else ""
+            return ToolExecutionResult(
+                contract_id=contract.contract_id,
+                tool_call_id=tool_call.tool_call_id,
+                status="timed_out",
+                stdout=_truncate(stdout, max_out),
+                stderr=_truncate(stderr, max_out) or "Process timed out and was terminated.",
+                started_at=started,
+                completed_at=now_utc(),
+                error_message="process_timeout_killed",
+            )
+
+    def _allowlisted(self, argv: list[str]) -> bool:
+        cmd = argv[0]
+        patterns = self.subprocess_allowlist.get(cmd)
+        if patterns is None:
+            return False
+        joined = " ".join(argv[1:])
+        dangerous = re.compile(r"(rm\s+-rf\s+/|curl[^|]*\|\s*sh|wget[^|]*\|\s*sh|git\s+push\s+--force)", re.I)
+        if dangerous.search(f"{cmd} {joined}"):
+            return False
+        if not patterns:
+            return True
+        return any(re.search(p, joined) for p in patterns)

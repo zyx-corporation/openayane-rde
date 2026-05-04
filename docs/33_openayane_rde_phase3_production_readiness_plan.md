@@ -1,6 +1,6 @@
 ---
 title: "OpenAyane RDE Phase 3 production-ready 制約解消計画"
-version: "0.4"
+version: "0.6"
 date: "2026-05-04"
 status: "in_progress"
 ---
@@ -27,6 +27,8 @@ status: "in_progress"
 - SQLite: execution_events.audit_event_id に ToolExecutionResult 側 ID を保存
 - テスト: tests/integration/test_post_execution_phase1_connector.py、test_agent_execution_gate_flow.py（approve_dry_run E2E）、
          tests/unit/test_safe_execution_runtime.py（.. 逸脱・symlink）、test_phase3_golden_fixtures.py、fixtures/phase3/*
+- 証拠粒度: `RDEResult.evidence_basis`（`EvidenceBasis`）— 合成ゲートと構造 RDE の根拠を `evaluation_kind` と独立に機械可読化（GitHub #2）。
+- SQLite: `applied_schema_versions()`；v2 移行の計画書は `docs/36_openayane_rde_sqlite_migration_v2_plan.md`（GitHub #7）。
 ```
 
 **未着手:** Wave C（C1–C3、および C4 の TOCTOU 等の深堀り）、Wave D 全体、Wave E。Wave C4 のうち **パス traversal / symlink の回帰テスト** は先行実装済み（下記 Wave C 参照）。
@@ -59,8 +61,7 @@ status: "in_progress"
 
 | 領域 | 制約・リスク | 解消の方向性 |
 |------|----------------|--------------|
-| **概念** | synthetic RDE と本来の RDE の混同 | **進捗:** `RDEResult.evaluation_kind` と監査 payload。命名整理（別型化）は任意。 |
-| **根拠** | RDE分類の根拠が機械可読でない | **追加課題:** `evaluation_kind` に加え、`evidence_basis` を導入する。 |
+| **概念** | synthetic RDE と本来の RDE の混同 | **進捗:** `evaluation_kind`・`evidence_basis` と監査 payload。命名整理（別型化）は任意。 |
 | **API** | ゲートがタプル返却 | **完了:** `ExecutionGateEvaluation`（`evaluate_before_execution` の戻り値）。 |
 | **互換** | `ModificationOutcome` リネーム | **進捗:** `CHANGELOG.md` 記載。README への短い言及は任意。 |
 | **Runtime** | シェル・HTTP 未実行、timeout 近似 | **allowlist subprocess**、**プロキシ経由 HTTP**、**実効 timeout（kill）** を段階導入 |
@@ -68,7 +69,7 @@ status: "in_progress"
 | **Runtime** | symlink / TOCTOU | **進捗:** `..` 逸脱・ワークスペース外 symlink の回帰テスト。TOCTOU / fd 検証は未。 |
 | **Rollback** | file_snapshot 中心 | 多ファイル・delete E2E；**git_patch_reverse** は P2 以降 |
 | **永続化** | SQLite 単一 writer | **書き込みキュー**または **RelationStore サービス**（単一プロセス RPC） |
-| **永続化** | review 列不足 | **migration v2** で payload 完全保存 |
+| **永続化** | review 列不足 | **進捗:** `docs/36_openayane_rde_sqlite_migration_v2_plan.md` と `applied_schema_versions()`。実装マイグレーションは次段。 |
 | **監査** | AuditLog 統合が薄い | **進捗:** execution 系イベントビルダと `append_audit_event`；ゲート／実行結果と `audit_event_id` の対応は **SQLite + モデル**で可。全経路での自動 append は未。 |
 | **RDE** | PostExecutionRDE 未配線 | **完了:** `run_phase1_evaluation_from_post_execution_diff`。ただし実行文脈を落とさない集約型の検討余地あり。 |
 | **テスト** | Golden / 境界不足 | **進捗:** `fixtures/phase3/*`、symlink／`..`、`approve_dry_run` E2E。 |
@@ -83,7 +84,7 @@ Phase 3 では、実行前評価と実行後評価を機械可読に区別する
 
 `evaluation_kind` は「いつ・どの種類の評価か」を示す。すでに `RDEResult.evaluation_kind` として `pre_synthetic` / `post_structural` が導入されている。
 
-一方、`evidence_basis` は「その評価が何を根拠にしたか」を示す。これは、synthetic RDE と Structural/Semantic RDE の混同をさらに抑えるための追加課題である。
+一方、`evidence_basis` は「その評価が何を根拠にしたか」を示す。`RDEResult.evidence_basis` として実装済みであり、synthetic RDE と Structural/Semantic RDE の混同をさらに抑える。
 
 ```python
 EvaluationKind = Literal[
@@ -226,9 +227,9 @@ unknown:
 | A2 | `ExecutionGateEvaluation`（decision + contract） | 公開 API がタプルに依存しない | **完了**（破壊的変更あり） |
 | A3 | CHANGELOG に `ModificationOutcome` 記載 | 破壊的変更が一文で分かる | **完了**（`CHANGELOG.md`） |
 | A4 | `docs/audit_event_schema.md` を JSON スキーマと同期 | 同一 PR で整合 | **完了**（canonical を `schemas/audit_event.schema.json` に明記しコピー一致） |
-| A5 | `evidence_basis` を導入 | RDE分類の根拠が `tool_risk_rule` / `structural_diff` / `semantic_delta` 等で機械可読 | **未** |
+| A5 | `evidence_basis` で RDE 根拠を機械可読化 | 合成＝`tool_risk_rule` 等、構造＝`structural_diff` 等 | **完了**（`RDEResult.evidence_basis`、`schemas/rde_result.schema.json`、監査 payload） |
 
-**期間目安：** 短サイクル（1–2 スプリント相当）。Wave A は A1–A4 までクローズ可能。A5 は追加hardening項目としてIssue化する。
+**期間目安：** 短サイクル（1–2 スプリント相当）。**Wave A（A1–A5）はクローズ可能。**
 
 ### Wave B — 監査・実行後評価（L1 の核）
 
@@ -240,9 +241,9 @@ unknown:
 | B2 | PostExecutionDiff → Phase 1 パイプライン | 統合テスト 1 本以上 | **完了**（`run_phase1_evaluation_from_post_execution_diff`、`tests/integration/test_post_execution_phase1_connector.py`） |
 | B3 | SQLite `execution_events` と `audit_event_id` | append 時に ID 連携 | **完了**（`ToolExecutionResult.audit_event_id` を SQLite に保存） |
 | B4 | Golden fixtures `fixtures/phase3/*` | CI で検証 | **完了**（`test_phase3_golden_fixtures.py`） |
-| B5 | `Phase3ExecutionEvaluationResult` を検討 | tool実行文脈を落とさずRDE評価結果を保持する設計判断 | **未** |
+| B5 | `Phase3ExecutionEvaluationResult` を検討 | tool実行文脈を落とさずRDE評価結果を保持する設計判断 | **判断済**（§11 — 現時点では導入せず、L1 は既存モデル＋SQLite＋監査で充足） |
 
-Wave B のL1必須部分はクローズ可能。B5 はL2またはPhase 4接続前の設計課題として扱う。
+Wave B のL1必須部分はクローズ可能。B5 の実装は L2／UI 要件が固まった段階で再検討する。
 
 ### Wave C — 実行環境の実効性（L1→L2）
 
@@ -250,9 +251,9 @@ Wave B のL1必須部分はクローズ可能。B5 はL2またはPhase 4接続�
 
 | ID | タスク | 完了条件（例） | 状態 |
 |----|--------|----------------|------|
-| C1 | `max_runtime_ms` をプロセス kill で実装 | 長時間 sleep テストで `timed_out` | **未** |
-| C2 | subprocess allowlist（コマンド・引数パターン） | ホワイトリスト外は `blocked` | **未** |
-| C3 | `external_side_effect_kind` を導入 | HTTP実行前に外部副作用を分類可能 | **未** |
+| C1 | `max_runtime_ms` をプロセス kill で実装 | 長時間 sleep テストで `timed_out` | **完了**（`SafeExecutionRuntime` の `subprocess.run(..., timeout=...)` + `timed_out` テスト） |
+| C2 | subprocess allowlist（コマンド・引数パターン） | ホワイトリスト外は `blocked` | **完了**（ランタイム既定は無効、allowlist 指定時のみ実行） |
+| C3 | `external_side_effect_kind` を導入 | HTTP実行前に外部副作用を分類可能 | **完了**（`ExecutionTaskContract.external_side_effect_kind`、リスク評価・ゲート分岐・テスト） |
 | C4 | HTTP クライアントを「プロキシ＋許可ドメイン」に限定 | contract の `network_allowed` と `external_side_effect_kind` が整合 | **未** |
 | C5 | path 攻撃系テスト | symlink、 `..` 逸脱 | **一部完了**（`tests/unit/test_safe_execution_runtime.py`。Windows は symlink テスト skip。TOCTOU は未） |
 
@@ -262,7 +263,7 @@ Wave B のL1必須部分はクローズ可能。B5 はL2またはPhase 4接続�
 
 | ID | タスク | 完了条件（例） | 状態 |
 |----|--------|----------------|------|
-| D1 | SQLite migration v2（review 全文列 or JSON） | 既存 DB の migrate 手順書 | **未** |
+| D1 | SQLite migration v2（review 全文列 or JSON） | 既存 DB の migrate 手順書 | **計画済**（`docs/36_openayane_rde_sqlite_migration_v2_plan.md`、適用バージョン API・テスト。実装マイグレーション本体は次 PR） |
 | D2 | 書き込みキュー or RelationStore マイクロサービス | 負荷方針の文書化 | **未** |
 | D3 | Rollback：多ファイル・delete の E2E | 評価レポート P0/P1 を満たす | **未** |
 
@@ -323,7 +324,7 @@ D1: Add SQLite migration v2 plan for review payload persistence
 ```text
 P0（PR・CI）     → 継続的に維持（Wave A 文書・スキーマは実装済み）。
 P1（MVP 完了線） → Wave A・B のL1必須部分は実装済み。Exit §7 の残りは「全経路監査組込み」程度の運用タスク。
-P2（Phase 4 前） → A5 + B5 + Wave C の C1–C3 + Wave D の D1（C5 の残は TOCTOU 等）
+P2（Phase 4 前） → B5 実装判断の見直し（必要時）+ Wave C の C1–C3 + Wave D の D1（C5 の残は TOCTOU 等）
 P3（将来）       → Wave C4–C5、D2、git_patch_reverse、container 等
 ```
 
@@ -335,11 +336,10 @@ P3（将来）       → Wave C4–C5、D2、git_patch_reverse、container 等
 |---|------|----------------|
 | 1 | 実行前ゲート・実行結果・レビュー決定が AuditLog（JSONL）上で追跡できる | **ほぼ達成** — ヘルパと統合テスト（`test_agent_execution_gate_flow`）でゲート／レビュー／実行後の追跡を実証。アプリ全 API での強制 append は未。 |
 | 2 | PostExecutionDiff から少なくとも 1 パスで RDE 再評価に接続できる | **達成** — `run_phase1_evaluation_from_post_execution_diff` + 統合テスト。 |
-| 3 | synthetic / structural の区別が監査またはモデルで機械可読 | **達成** — `evaluation_kind`、`audit_event_execution_gate_evaluated` の payload。 |
-| 4 | RDE分類の根拠が `evidence_basis` として機械可読 | **未** — 追加hardening対象。 |
-| 5 | パス traversal / symlink に対する回帰テストがある | **達成**（最小限）— `..` と POSIX symlink。TOCTOU は未。 |
-| 6 | approve_dry_run から runtime 再開までの E2E が 1 本以上ある | **達成** — `test_human_review_approve_dry_run_then_runtime`。 |
-| 7 | GitHub Actions が main / release ブランチで緑を維持している | **運用確認** — マージ後に CI を確認すること。 |
+| 3 | synthetic / structural の区別が監査またはモデルで機械可読 | **達成** — `evaluation_kind` と `evidence_basis`、監査 payload。 |
+| 4 | パス traversal / symlink に対する回帰テストがある | **達成**（最小限）— `..` と POSIX symlink。TOCTOU は未。 |
+| 5 | approve_dry_run から runtime 再開までの E2E が 1 本以上ある | **達成** — `test_human_review_approve_dry_run_then_runtime`。 |
+| 6 | GitHub Actions が main / release ブランチで緑を維持している | **運用確認** — マージ後に CI を確認すること。 |
 
 L2 を宣言するには、さらに **C1–C4**（実効 timeout、allowlist、外部副作用分類、制限付きネット）と **D1**（migration）を満たすことを推奨する。
 
@@ -418,13 +418,31 @@ L2 を宣言するには、さらに **C1–C4**（実効 timeout、allowlist、
 2. `docs/32` §8.6 — 本書（§0.1・§7）への参照でバックログを置き換え済みなら、Issue 番号の追記のみ。  
 3. **L1 宣言**前に: 監査 append を主要エントリポイントへ組込むか方針決定、CI 緑の確認。  
 4. スプリントごとに **§7 Exit criteria** 表を更新する。  
-5. 最初の hardening PR 候補は A5（`evidence_basis`）と C3（`external_side_effect_kind`）。
+5. 次の hardening PR 候補は C1（実効 timeout）と C3（`external_side_effect_kind`）。
 
-## 11. 改訂履歴
+## 11. GitHub Issue 対応メモ
+
+### B5（#3）`Phase3ExecutionEvaluationResult` を導入するか
+
+**判断（2026-05）: 現時点では導入しない。**
+
+- L1 の要件は `run_phase1_evaluation_from_post_execution_diff` と既存モデル（`ToolCallRequest`、`ExecutionTaskContract`、`ExecutionGateDecision`、`ToolExecutionResult`、`PostExecutionDiff`）の組合せで満たせる。
+- 実行コンテキストの永続化は `SQLiteRelationStore`（`execution_events`、`review_requests`）と JSONL 監査で行う。単一アグリゲートに束ねると、Phase 1 の `Phase1EvaluationResult` と責務が重複し、マージコストが上がる。
+- 将来、UI または外部 API が「1 リクエスト ID で実行〜RDE まで」を必須にする場合に、`Phase3ExecutionEvaluationResult` 型を **読み取り専用ビュー**として導入する（`Phase1EvaluationResult` を置換しない）。
+
+テスト: `tests/integration/test_post_execution_phase1_connector.py` が実行後パスで `evidence_basis` を保持する RDE 結果を検証する。
+
+### Issue #8（Project board）
+
+リポジトリ単体では GitHub Projects の作成権限に依存する。組織のボード運用方針が決まり次第、Issue を手動で Project に接続する。
+
+## 12. 改訂履歴
 
 | 版 | 日付 | 内容 |
 |----|------|------|
 | 0.1 | 2026-05-04 | 初版（L0–L3 定義、Wave A–E、Exit criteria） |
 | 0.2 | 2026-05-04 | Wave A/B 中核を実装（`ExecutionGateEvaluation`、`evaluation_kind`、監査ヘルパ、PostExecution→Phase1、Golden、パス／approve_dry_run E2E）。Wave C–E は未着手。 |
 | 0.3 | 2026-05-04 | 実装済み内容を本文に反映（§0.1 サマリ、§2 進捗列、Wave A–C 状態列、§5 Exit チェック表、§7 更新）。 |
-| 0.4 | 2026-05-04 | 評価指摘を反映。L1をinternal-pilot readyへ修正、`evidence_basis`、`EvaluationProvenance`、`Phase3ExecutionEvaluationResult`、`external_side_effect_kind`、Issue粒度方針を追加。 |
+| 0.4 | 2026-05-04 | 評価指摘を反映（L1＝internal-pilot ready、provenance 設計、`external_side_effect_kind`、Issue 粒度）。A5 `evidence_basis` 実装、D1 計画 `docs/36`、B5 判断を §11 に記録。 |
+| 0.5 | 2026-05-04 | A5 実装を本文・Wave 表・Exit と整合（§12）。§11／§12 の番号整理。 |
+| 0.6 | 2026-05-04 | C1/C2/C3 実装反映（runtime timeout kill、subprocess allowlist、external_side_effect_kind）。Wave C 状態更新。 |

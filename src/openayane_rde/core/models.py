@@ -65,6 +65,18 @@ RDEClassification = Literal[
 
 # Pre-execution gate uses synthetic classification; Phase 1 / post-exec use structural diff.
 RdeEvaluationKind = Literal["pre_synthetic", "post_structural"]
+
+# What evidence the RDE classification was derived from (orthogonal to evaluation_kind).
+EvidenceBasis = Literal[
+    "tool_risk_rule",
+    "execution_contract",
+    "structural_diff",
+    "semantic_delta",
+    "observed_side_effects",
+    "rollback_result",
+    "human_review_decision",
+    "llm_assisted_semantic_evaluation",
+]
 RiskLevel = Literal["low", "medium", "high", "critical"]
 RequiredAction = Literal[
     "approve",
@@ -134,6 +146,18 @@ ExecutionActionType = Literal[
     "network",
     "external_api",
     "repository_patch",
+    "unknown",
+]
+ExternalSideEffectKind = Literal[
+    "none",
+    "read_only_fetch",
+    "state_changing_request",
+    "notification",
+    "publishing",
+    "payment_or_billing",
+    "identity_or_auth",
+    "data_exfiltration_risk",
+    "legal_or_compliance_effect",
     "unknown",
 ]
 
@@ -419,6 +443,7 @@ class RDEResult(BaseModel):
     score_details: ScoreDetails | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
     evaluation_kind: RdeEvaluationKind | None = None
+    evidence_basis: list[EvidenceBasis] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=now_utc)
 
     model_config = {"extra": "forbid"}
@@ -641,6 +666,8 @@ class ExecutionTaskContract(BaseModel):
     max_runtime_ms: int | None = None
     max_output_bytes: int | None = None
     network_allowed: bool = False
+    external_side_effect_kind: ExternalSideEffectKind = "none"
+    allowed_network_domains: list[str] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=now_utc)
 
     model_config = {"extra": "forbid"}

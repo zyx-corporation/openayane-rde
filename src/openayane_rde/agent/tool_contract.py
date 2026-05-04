@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import re
+from urllib.parse import urlparse
 from typing import Any
 
 from openayane_rde.core.models import (
+    ExternalSideEffectKind,
     ExecutionActionType,
     ExecutionTaskContract,
     RollbackStrategyKind,
@@ -23,6 +25,7 @@ _CRITICAL_SHELL = re.compile(
     r"(rm\s+-rf\s+/|curl[^|]*\|\s*sh|wget[^|]*\|\s*sh|sudo\s+rm|git\s+push\s+--force)",
     re.IGNORECASE,
 )
+_STATE_CHANGING_HINT = re.compile(r"\b(post|put|patch|delete|webhook|publish|submit|send)\b", re.IGNORECASE)
 
 
 def _first_str(d: dict[str, Any], keys: frozenset[str] | set[str]) -> str | None:
@@ -101,6 +104,8 @@ def build_execution_task_contract(req: ToolCallRequest) -> ExecutionTaskContract
     allowed: list[str] = []
     expected = infer_side_effects_for_action(action_type)
     network_allowed = action_type in ("network", "external_api")
+    external_kind = _infer_external_side_effect_kind(req.arguments, action_type)
+    allowed_domains = _infer_allowed_domains(req.arguments)
     return ExecutionTaskContract(
         source_tool_call_id=req.tool_call_id,
         agent_id=req.agent_id,
@@ -113,7 +118,42 @@ def build_execution_task_contract(req: ToolCallRequest) -> ExecutionTaskContract
         protected_resources=protected,
         rollback_strategy=rollback_strategy,
         network_allowed=network_allowed,
+        external_side_effect_kind=external_kind,
+        allowed_network_domains=allowed_domains,
     )
+
+
+def _infer_allowed_domains(arguments: dict[str, Any]) -> list[str]:
+    raw = arguments.get("allowed_domains")
+    if not isinstance(raw, list):
+        return []
+    return [str(d).strip().lower() for d in raw if str(d).strip()]
+
+
+def _infer_external_side_effect_kind(
+    arguments: dict[str, Any], action_type: ExecutionActionType
+) -> ExternalSideEffectKind:
+    if action_type not in ("network", "external_api"):
+        return "none"
+    blob = str(arguments).lower()
+    if any(k in blob for k in ("payment", "billing", "invoice", "charge")):
+        return "payment_or_billing"
+    if any(k in blob for k in ("auth", "oauth", "login", "token_refresh")):
+        return "identity_or_auth"
+    if any(k in blob for k in ("exfiltrate", "upload_dump", "dump_all", "backup_export")):
+        return "data_exfiltration_risk"
+    if any(k in blob for k in ("publish", "release", "post_message")):
+        return "publishing"
+    if any(k in blob for k in ("notify", "notification", "webhook")):
+        return "notification"
+    method = str(arguments.get("method", "")).lower()
+    if method in {"post", "put", "patch", "delete"} or _STATE_CHANGING_HINT.search(blob):
+        return "state_changing_request"
+    if method in {"get", "head"}:
+        return "read_only_fetch"
+    if _first_str(arguments, _URL_KEYS):
+        return "read_only_fetch"
+    return "unknown"
 
 
 def score_tool_call_risk(
@@ -201,7 +241,87 @@ def score_tool_call_risk(
             reasons=reasons,
         )
     if external:
-        reasons.append("external_side_effect")
+        kind = contract.external_side_effect_kind
+        reasons.append(f"external_side_effect:{kind}")
+        if kind == "data_exfiltration_risk":
+            return ToolCallRisk(
+                risk_level="critical",
+                risk_score=0.97,
+                irreversible=True,
+                external_side_effect=True,
+                protected_resource_touched=False,
+                rollback_possible=False,
+                unknown_target=False,
+                reasons=reasons,
+            )
+        if kind == "payment_or_billing":
+            return ToolCallRisk(
+                risk_level="critical",
+                risk_score=0.95,
+                irreversible=True,
+                external_side_effect=True,
+                protected_resource_touched=False,
+                rollback_possible=False,
+                unknown_target=False,
+                reasons=reasons,
+            )
+        if kind in ("state_changing_request", "notification", "publishing", "identity_or_auth"):
+            return ToolCallRisk(
+                risk_level="high",
+                risk_score=0.82,
+                irreversible=True,
+                external_side_effect=True,
+                protected_resource_touched=False,
+                rollback_possible=False,
+                unknown_target=False,
+                reasons=reasons,
+            )
+        if kind == "unknown":
+            return ToolCallRisk(
+                risk_level="high",
+                risk_score=0.76,
+                irreversible=True,
+                external_side_effect=True,
+                protected_resource_touched=False,
+                rollback_possible=False,
+                unknown_target=False,
+                reasons=reasons,
+            )
+        url = _first_str(raw_arguments or {}, _URL_KEYS) if raw_arguments is not None else None
+        if url and _SECRET_PATTERNS.search(url):
+            return ToolCallRisk(
+                risk_level="critical",
+                risk_score=1.0,
+                irreversible=True,
+                external_side_effect=True,
+                protected_resource_touched=False,
+                rollback_possible=False,
+                unknown_target=False,
+                reasons=reasons + ["credential_in_url"],
+            )
+        if kind == "read_only_fetch":
+            domain_ok = _domain_allowed(url, contract.allowed_network_domains)
+            if not domain_ok:
+                return ToolCallRisk(
+                    risk_level="high",
+                    risk_score=0.72,
+                    irreversible=False,
+                    external_side_effect=True,
+                    protected_resource_touched=False,
+                    rollback_possible=False,
+                    unknown_target=False,
+                    reasons=reasons + ["domain_not_allowlisted"],
+                )
+            return ToolCallRisk(
+                risk_level="medium",
+                risk_score=0.5,
+                irreversible=False,
+                external_side_effect=True,
+                protected_resource_touched=False,
+                rollback_possible=False,
+                unknown_target=False,
+                reasons=reasons + ["allowlisted_read_only_fetch"],
+            )
         return ToolCallRisk(
             risk_level="high",
             risk_score=0.72,
@@ -244,3 +364,13 @@ def score_tool_call_risk(
         unknown_target=False,
         reasons=reasons + ["read_or_low_impact"],
     )
+
+
+def _domain_allowed(url: str | None, allowed_domains: list[str]) -> bool:
+    if not url:
+        return False
+    if not allowed_domains:
+        return False
+    parsed = urlparse(url)
+    host = (parsed.hostname or "").lower()
+    return any(host == d or host.endswith(f".{d}") for d in allowed_domains)
