@@ -420,7 +420,7 @@ class SQLiteRelationStore:
                 "gate_action": "executed",
                 "risk_level": "unknown",
                 "status": event.status,
-                "audit_event_id": None,
+                "audit_event_id": event.audit_event_id,
                 "rollback_plan_id": event.rollback_plan_id,
                 "review_request_id": None,
                 "created_at": created,

@@ -8,8 +8,11 @@ from openayane_rde.agent.tool_contract import (
 )
 from openayane_rde.core.models import (
     ExecutionGateDecision,
+    ExecutionGateEvaluation,
     ExecutionTaskContract,
+    ReviewDecision,
     ReviewRequest,
+    RollbackPlan,
     ToolCallRequest,
     ToolExecutionResult,
 )
@@ -32,11 +35,11 @@ def evaluate_before_execution(
     object_id: str = "unknown",
     relation_type: str = "generator-document",
     protected_resource_paths: list[str] | None = None,
-) -> tuple[ExecutionGateDecision, ExecutionTaskContract]:
+) -> ExecutionGateEvaluation:
     """Run contract building, risk scoring, synthetic RDE, and policy.
 
-    Returns the gate decision together with the :class:`ExecutionTaskContract`
-    instance so callers can pass the same object to :func:`enforce_execution_decision`.
+    Returns an :class:`ExecutionGateEvaluation` bundling the gate decision and
+    :class:`ExecutionTaskContract` for :func:`enforce_execution_decision`.
     """
 
     contract = build_execution_task_contract(tool_call)
@@ -56,7 +59,7 @@ def evaluate_before_execution(
         rde_result=rde,
         relation_context=rc,
     )
-    return gate, contract
+    return ExecutionGateEvaluation(decision=gate, contract=contract)
 
 
 def enforce_execution_decision(
@@ -96,3 +99,20 @@ def enforce_execution_decision(
         status="not_executed",
         stderr=f"Unhandled gate action: {gate.policy_action}",
     )
+
+
+def execute_after_review_decision(
+    *,
+    decision: ReviewDecision,
+    contract: ExecutionTaskContract,
+    tool_call: ToolCallRequest,
+    runtime: SafeExecutionRuntime,
+    rollback_plan: RollbackPlan | None = None,
+) -> ToolExecutionResult | None:
+    """Run the safe runtime after a reviewer approves execution or dry-run only."""
+
+    if decision.decision == "approve_dry_run":
+        return runtime.execute(contract, tool_call, rollback_plan, dry_run=True)
+    if decision.decision == "approve":
+        return runtime.execute(contract, tool_call, rollback_plan, dry_run=False)
+    return None

@@ -19,14 +19,16 @@ def test_low_risk_read_approve(tmp_path) -> None:
         arguments={"path": "doc.txt"},
         created_at=now_utc(),
     )
-    gate, _ = evaluate_before_execution(
+    ev = evaluate_before_execution(
         tc,
         store,
         ExecutionPolicyConfig(),
         subject_id="s",
         object_id="o",
     )
-    assert gate.policy_action == "approve"
+    assert ev.decision.policy_action == "approve"
+    assert ev.decision.rde_result is not None
+    assert ev.decision.rde_result.evaluation_kind == "pre_synthetic"
 
 
 def test_protected_resource_human_review(tmp_path) -> None:
@@ -39,13 +41,13 @@ def test_protected_resource_human_review(tmp_path) -> None:
         arguments={"path": "secrets/x", "content": "1"},
         created_at=now_utc(),
     )
-    gate, _ = evaluate_before_execution(
+    ev = evaluate_before_execution(
         tc,
         store,
         ExecutionPolicyConfig(),
         protected_resource_paths=["secrets/"],
     )
-    assert gate.policy_action == "human_review"
+    assert ev.decision.policy_action == "human_review"
 
 
 def test_secret_access_halt(tmp_path) -> None:
@@ -58,8 +60,8 @@ def test_secret_access_halt(tmp_path) -> None:
         arguments={"command": "echo", "token": "abc"},
         created_at=now_utc(),
     )
-    gate, _ = evaluate_before_execution(tc, store, ExecutionPolicyConfig())
-    assert gate.policy_action == "halt"
+    ev = evaluate_before_execution(tc, store, ExecutionPolicyConfig())
+    assert ev.decision.policy_action == "halt"
 
 
 def test_low_trust_medium_write_human_review(tmp_path) -> None:
@@ -82,11 +84,11 @@ def test_low_trust_medium_write_human_review(tmp_path) -> None:
         arguments={"path": "f.txt", "content": "x"},
         created_at=now_utc(),
     )
-    gate, contract = evaluate_before_execution(
+    ev = evaluate_before_execution(
         tc,
         store,
         ExecutionPolicyConfig(allow_auto_execute_medium_risk=False),
         subject_id="s",
         object_id="o",
     )
-    assert gate.policy_action in ("human_review", "dry_run_only")
+    assert ev.decision.policy_action in ("human_review", "dry_run_only")

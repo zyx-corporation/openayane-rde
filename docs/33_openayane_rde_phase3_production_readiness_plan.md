@@ -1,8 +1,8 @@
 ---
 title: "OpenAyane RDE Phase 3 production-ready 制約解消計画"
-version: "0.1"
+version: "0.2"
 date: "2026-05-04"
-status: "planning"
+status: "in_progress"
 ---
 
 # OpenAyane RDE Phase 3：production-ready 制約解消計画
@@ -160,3 +160,4 @@ L2 を宣言するには、さらに **C1–C3**（実効 timeout、allowlist、
 | 版 | 日付 | 内容 |
 |----|------|------|
 | 0.1 | 2026-05-04 | 初版（L0–L3 定義、Wave A–E、Exit criteria） |
+| 0.2 | 2026-05-04 | Wave A/B 中核を実装（`ExecutionGateEvaluation`、`evaluation_kind`、監査ヘルパ、PostExecution→Phase1、Golden、パス／approve_dry_run E2E）。Wave C–E は未着手。 |

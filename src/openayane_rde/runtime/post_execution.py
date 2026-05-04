@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 from openayane_rde.core.models import PostExecutionDiff, ToolExecutionResult
+from openayane_rde.runtime._flow import run_phase1_evaluation_from_post_execution_diff
+
+__all__ = ["build_post_execution_diff", "run_phase1_evaluation_from_post_execution_diff"]
 
 
 def build_post_execution_diff(

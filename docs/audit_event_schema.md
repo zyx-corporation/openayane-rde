@@ -47,7 +47,9 @@ Human review outcomes are part of the institutional feedback loop.
 
 Phase 1 may use JSONL, but the conceptual model is append-only.
 
-## 3. JSON Schema Draft
+## 3. JSON Schema (canonical)
+
+The canonical schema file is **`schemas/audit_event.schema.json`**. The following block is a verbatim copy — **PRs that change the schema must update this section in the same commit** (see production readiness plan Wave A4).
 
 ```json
 {
@@ -109,7 +111,20 @@ Phase 1 may use JSONL, but the conceptual model is append-only.
         "request_human_review",
         "submit_human_review",
         "update_relation_store",
-        "error"
+        "error",
+        "execution_gate_evaluated",
+        "execution_blocked",
+        "execution_approved",
+        "execution_dry_run_completed",
+        "execution_completed",
+        "execution_failed",
+        "execution_timed_out",
+        "human_review_requested",
+        "human_review_decided",
+        "rollback_plan_created",
+        "rollback_completed",
+        "rollback_failed",
+        "semantic_evaluation_completed"
       ]
     },
     "hash_before": {
@@ -141,6 +156,13 @@ Phase 1 may use JSONL, but the conceptual model is append-only.
 }
 ```
 
+### 3.1 Execution and RDE payload conventions
+
+For Phase 3 execution-audit rows, `payload` SHOULD include:
+
+- `evaluation_kind`: `"pre_synthetic"` (tool gate / risk-only RDE) or `"post_structural"` (structural diff pipeline).
+- `policy_action` / `tool_call_id` / `status` as applicable (see `openayane_rde.audit.log` helpers).
+
 ## 4. Example
 
 ```json
@@ -161,7 +183,8 @@ Phase 1 may use JSONL, but the conceptual model is append-only.
   "explanation": "RDE classified the change as suspicious_drift because a protected claim changed and the generator self-report did not disclose it.",
   "payload": {
     "classification": "suspicious_drift",
-    "risk_level": "high"
+    "risk_level": "high",
+    "evaluation_kind": "post_structural"
   },
   "error": null
 }

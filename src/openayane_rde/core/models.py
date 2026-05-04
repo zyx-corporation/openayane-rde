@@ -62,6 +62,9 @@ RDEClassification = Literal[
     "critical_corruption",
     "creative_deviation",
 ]
+
+# Pre-execution gate uses synthetic classification; Phase 1 / post-exec use structural diff.
+RdeEvaluationKind = Literal["pre_synthetic", "post_structural"]
 RiskLevel = Literal["low", "medium", "high", "critical"]
 RequiredAction = Literal[
     "approve",
@@ -415,6 +418,7 @@ class RDEResult(BaseModel):
     explanation: str
     score_details: ScoreDetails | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
+    evaluation_kind: RdeEvaluationKind | None = None
     created_at: datetime = Field(default_factory=now_utc)
 
     model_config = {"extra": "forbid"}
@@ -671,6 +675,15 @@ class ExecutionGateDecision(BaseModel):
     model_config = {"extra": "forbid"}
 
 
+class ExecutionGateEvaluation(BaseModel):
+    """Pre-execution gate outcome: policy decision plus the task contract used for execution."""
+
+    decision: ExecutionGateDecision
+    contract: ExecutionTaskContract
+
+    model_config = {"extra": "forbid"}
+
+
 class ToolExecutionResult(BaseModel):
     """Outcome of Safe Execution Runtime (Phase 3 spec: ExecutionResult)."""
 
@@ -688,6 +701,7 @@ class ToolExecutionResult(BaseModel):
     rollback_plan_id: str | None = None
     error_message: str | None = None
     policy_decision_id: str | None = None
+    audit_event_id: str | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
     created_at: datetime = Field(default_factory=now_utc)
 
