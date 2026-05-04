@@ -21,6 +21,7 @@ from openayane_rde.core.models import (
     AuditEvent,
     GeneratorOutput,
     PolicyDecision,
+    PostExecutionDiff,
     RDEResult,
     RelationContext,
     SemanticDelta,
@@ -112,6 +113,8 @@ def run_phase1_evaluation(
         semantic_delta=semantic_delta,
         relation_context=relation_context,
     )
+    if rde_result.evaluation_kind is None:
+        rde_result = rde_result.model_copy(update={"evaluation_kind": "post_structural"})
 
     policy_decision = decide_policy(rde_result, task_contract, relation_context)
 
@@ -168,7 +171,76 @@ def _write_audit_event(
             "classification": rde_result.classification,
             "risk_level": rde_result.risk_level,
             "policy_action": policy_decision.action,
+            "evaluation_kind": rde_result.evaluation_kind,
         },
     )
     append_event(audit_log_path, event)
     return event
+
+
+def run_phase1_evaluation_from_post_execution_diff(
+    post_diff: PostExecutionDiff,
+    original: str,
+    generator_output: GeneratorOutput,
+    task_contract: TaskContract,
+    domain: Domain = "markdown",
+    required_json_fields: list[str] | None = None,
+    relation_context: RelationContext | None = None,
+    audit_log_path: str | Path | None = None,
+) -> Phase1EvaluationResult:
+    """Run Phase 1 RDE on a post-execution diff (structural diff optional).
+
+    If ``post_diff.structural_diff`` / ``semantic_delta`` are set, they are
+    reused; otherwise diffing and semantic estimation follow the normal Phase 1
+    path. ``rde_result.evaluation_kind`` is ``post_structural``.
+    """
+
+    structural_diff = post_diff.structural_diff
+    if structural_diff is None:
+        structural_diff = run_structural_diff(
+            original,
+            generator_output,
+            task_contract,
+            domain,
+            required_json_fields,
+        )
+
+    semantic_delta = post_diff.semantic_delta
+    if semantic_delta is None:
+        semantic_delta = estimate_semantic_delta(structural_diff, task_contract)
+
+    rde_result = evaluate_rde(
+        contract=task_contract,
+        generator_output=generator_output,
+        structural_diff=structural_diff,
+        semantic_delta=semantic_delta,
+        relation_context=relation_context,
+    )
+    rde_result = rde_result.model_copy(update={"evaluation_kind": "post_structural"})
+
+    policy_decision = decide_policy(rde_result, task_contract, relation_context)
+
+    audit_event: AuditEvent | None = None
+    if audit_log_path is not None:
+        audit_event = _write_audit_event(
+            task_contract=task_contract,
+            generator_output=generator_output,
+            structural_diff=structural_diff,
+            semantic_delta=semantic_delta,
+            rde_result=rde_result,
+            policy_decision=policy_decision,
+            original=original,
+            generated=_extract_payload_text(generator_output),
+            audit_log_path=audit_log_path,
+        )
+
+    return Phase1EvaluationResult(
+        task_contract=task_contract,
+        generator_output=generator_output,
+        relation_context=relation_context,
+        structural_diff=structural_diff,
+        semantic_delta=semantic_delta,
+        rde_result=rde_result,
+        policy_decision=policy_decision,
+        audit_event=audit_event,
+    )

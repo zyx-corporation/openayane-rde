@@ -1,0 +1,23 @@
+{
+  "event_id": "audit_golden_phase3_eg",
+  "timestamp": "2026-05-04T12:00:00+00:00",
+  "actor": "policy",
+  "task_contract_id": "tc_golden_phase3",
+  "generator_output_id": null,
+  "structural_diff_id": null,
+  "semantic_delta_id": null,
+  "rde_result_id": "rde_golden_1",
+  "policy_decision_id": null,
+  "execution_result_id": null,
+  "action": "execution_gate_evaluated",
+  "hash_before": null,
+  "hash_after": null,
+  "explanation": "Golden fixture: execution gate evaluated",
+  "payload": {
+    "evaluation_kind": "pre_synthetic",
+    "policy_action": "approve",
+    "tool_call_id": "tc_call_golden",
+    "risk_level": "low"
+  },
+  "error": null
+}

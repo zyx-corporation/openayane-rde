@@ -86,6 +86,10 @@
       "type": "object",
       "additionalProperties": true
     },
+    "evaluation_kind": {
+      "type": ["string", "null"],
+      "enum": ["pre_synthetic", "post_structural", null]
+    },
     "created_at": {
       "type": "string",
       "format": "date-time"

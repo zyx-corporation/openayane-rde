@@ -57,7 +57,20 @@
         "request_human_review",
         "submit_human_review",
         "update_relation_store",
-        "error"
+        "error",
+        "execution_gate_evaluated",
+        "execution_blocked",
+        "execution_approved",
+        "execution_dry_run_completed",
+        "execution_completed",
+        "execution_failed",
+        "execution_timed_out",
+        "human_review_requested",
+        "human_review_decided",
+        "rollback_plan_created",
+        "rollback_completed",
+        "rollback_failed",
+        "semantic_evaluation_completed"
       ]
     },
     "hash_before": {

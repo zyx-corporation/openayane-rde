@@ -10,8 +10,8 @@ from openayane_rde.relation.store import JSONRelationStore, relation_store_key
 
 def test_relation_store_key_format() -> None:
     k = relation_store_key("sub ject", "obj\x1f")
-    assert "\x1f" in k
-    assert k == relation_store_key("sub ject", "obj\x1f")
+    assert k.count("\x1f") >= 2
+    assert k == relation_store_key("sub ject", "obj\x1f", "generator-document")
 
 
 def test_json_relation_store_roundtrip(tmp_path: Path) -> None:

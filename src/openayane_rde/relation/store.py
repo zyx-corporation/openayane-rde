@@ -11,22 +11,40 @@ from openayane_rde.core.models import RelationContext, RelationStoreRecord
 
 @runtime_checkable
 class RelationStore(Protocol):
-    """Minimal relation persistence API (Phase 2)."""
+    """Minimal relation persistence API (Phase 2).
 
-    def get(self, subject_id: str, object_id: str) -> RelationStoreRecord | None:
+    Phase 3 SQLiteRelationStore keys rows by (subject_id, object_id, relation_type).
+    Backends that ignore ``relation_type`` use the default ``generator-document``.
+    """
+
+    def get(
+        self,
+        subject_id: str,
+        object_id: str,
+        relation_type: str = "generator-document",
+    ) -> RelationStoreRecord | None:
         ...
 
     def upsert(self, record: RelationStoreRecord) -> None:
         ...
 
-    def load_context(self, subject_id: str, object_id: str) -> RelationContext:
+    def load_context(
+        self,
+        subject_id: str,
+        object_id: str,
+        relation_type: str = "generator-document",
+    ) -> RelationContext:
         ...
 
 
-def relation_store_key(subject_id: str, object_id: str) -> str:
+def relation_store_key(
+    subject_id: str,
+    object_id: str,
+    relation_type: str = "generator-document",
+) -> str:
     """Stable internal map key for relation records (U+001F unit separator)."""
 
-    return f"{subject_id}\x1f{object_id}"
+    return f"{subject_id}\x1f{object_id}\x1f{relation_type}"
 
 
 class JSONRelationStore:
@@ -43,6 +61,10 @@ class JSONRelationStore:
             k: RelationStoreRecord.model_validate(v) for k, v in raw.items()
         }
 
+    @staticmethod
+    def _legacy_key(subject_id: str, object_id: str) -> str:
+        return f"{subject_id}\x1f{object_id}"
+
     def save_all(self, records: dict[str, RelationStoreRecord]) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         payload = {k: r.model_dump(mode="json") for k, r in records.items()}
@@ -51,18 +73,41 @@ class JSONRelationStore:
         tmp.write_text(text, encoding="utf-8")
         tmp.replace(self.path)
 
-    def get(self, subject_id: str, object_id: str) -> RelationStoreRecord | None:
-        return self.load_all().get(relation_store_key(subject_id, object_id))
+    def get(
+        self,
+        subject_id: str,
+        object_id: str,
+        relation_type: str = "generator-document",
+    ) -> RelationStoreRecord | None:
+        all_r = self.load_all()
+        k = relation_store_key(subject_id, object_id, relation_type)
+        if k in all_r:
+            return all_r[k]
+        if relation_type == "generator-document":
+            legacy = self._legacy_key(subject_id, object_id)
+            return all_r.get(legacy)
+        return None
 
     def upsert(self, record: RelationStoreRecord) -> None:
         all_r = self.load_all()
-        all_r[relation_store_key(record.subject_id, record.object_id)] = record
+        new_key = relation_store_key(
+            record.subject_id, record.object_id, record.relation_type
+        )
+        legacy = self._legacy_key(record.subject_id, record.object_id)
+        if legacy in all_r and new_key != legacy:
+            del all_r[legacy]
+        all_r[new_key] = record
         self.save_all(all_r)
 
-    def load_context(self, subject_id: str, object_id: str) -> RelationContext:
+    def load_context(
+        self,
+        subject_id: str,
+        object_id: str,
+        relation_type: str = "generator-document",
+    ) -> RelationContext:
         from openayane_rde.relation.context_loader import relation_record_to_context
 
-        rec = self.get(subject_id, object_id)
+        rec = self.get(subject_id, object_id, relation_type)
         if rec is None:
             from openayane_rde.relation.context_loader import load_neutral_context
 

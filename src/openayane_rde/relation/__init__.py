@@ -5,6 +5,7 @@ from openayane_rde.relation.context_loader import (
     load_relation_context,
     relation_record_to_context,
 )
+from openayane_rde.relation.sqlite_store import SQLiteRelationStore
 from openayane_rde.relation.store import JSONRelationStore, RelationStore, relation_store_key
 from openayane_rde.relation.update import (
     update_relation_context,
@@ -12,6 +13,7 @@ from openayane_rde.relation.update import (
 )
 
 __all__ = [
+    "SQLiteRelationStore",
     "JSONRelationStore",
     "RelationStore",
     "relation_store_key",

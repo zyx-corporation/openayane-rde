@@ -23,7 +23,10 @@ from openayane_rde.core.models import (
 )
 from openayane_rde.relation.store import JSONRelationStore
 from openayane_rde.relation.update import update_relation_from_evaluation_result
-from openayane_rde.runtime._flow import run_phase1_evaluation
+from openayane_rde.runtime._flow import (
+    run_phase1_evaluation,
+    run_phase1_evaluation_from_post_execution_diff,
+)
 from openayane_rde.runtime.result import Phase1EvaluationResult
 
 __all__ = [
@@ -40,5 +43,6 @@ __all__ = [
     "JSONRelationStore",
     "Phase1EvaluationResult",
     "run_phase1_evaluation",
+    "run_phase1_evaluation_from_post_execution_diff",
     "update_relation_from_evaluation_result",
 ]

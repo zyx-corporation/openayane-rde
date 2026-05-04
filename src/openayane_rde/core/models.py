@@ -62,6 +62,9 @@ RDEClassification = Literal[
     "critical_corruption",
     "creative_deviation",
 ]
+
+# Pre-execution gate uses synthetic classification; Phase 1 / post-exec use structural diff.
+RdeEvaluationKind = Literal["pre_synthetic", "post_structural"]
 RiskLevel = Literal["low", "medium", "high", "critical"]
 RequiredAction = Literal[
     "approve",
@@ -90,6 +93,20 @@ AuditActionKind = Literal[
     "submit_human_review",
     "update_relation_store",
     "error",
+    # Phase 3 execution / review / rollback audit kinds
+    "execution_gate_evaluated",
+    "execution_blocked",
+    "execution_approved",
+    "execution_dry_run_completed",
+    "execution_completed",
+    "execution_failed",
+    "execution_timed_out",
+    "human_review_requested",
+    "human_review_decided",
+    "rollback_plan_created",
+    "rollback_completed",
+    "rollback_failed",
+    "semantic_evaluation_completed",
 ]
 
 PolicyActionKind = Literal[
@@ -99,6 +116,65 @@ PolicyActionKind = Literal[
     "human_review",
     "halt",
     "rollback",
+]
+
+ExecutionGatePolicyAction = Literal[
+    "approve",
+    "approve_with_notes",
+    "dry_run_only",
+    "human_review",
+    "halt",
+]
+
+ExecutionActionType = Literal[
+    "read",
+    "write",
+    "delete",
+    "execute",
+    "network",
+    "external_api",
+    "repository_patch",
+    "unknown",
+]
+
+RollbackStrategyKind = Literal[
+    "none",
+    "file_snapshot",
+    "git_patch_reverse",
+    "transactional",
+    "manual",
+]
+
+ToolExecutionStatus = Literal[
+    "not_executed",
+    "dry_run_completed",
+    "completed",
+    "failed",
+    "timed_out",
+    "blocked",
+]
+
+ReviewRequestStatus = Literal[
+    "pending",
+    "approved",
+    "rejected",
+    "revision_requested",
+    "expired",
+]
+
+ReviewerDecisionKind = Literal[
+    "approve",
+    "approve_dry_run",
+    "reject",
+    "request_revision",
+    "require_rollback_plan",
+]
+
+SemanticEvaluatorRecommendation = Literal[
+    "no_issue",
+    "approve_with_notes",
+    "human_review",
+    "halt",
 ]
 
 RelationType = Literal[
@@ -342,6 +418,7 @@ class RDEResult(BaseModel):
     explanation: str
     score_details: ScoreDetails | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
+    evaluation_kind: RdeEvaluationKind | None = None
     created_at: datetime = Field(default_factory=now_utc)
 
     model_config = {"extra": "forbid"}
@@ -529,12 +606,222 @@ class RelationUpdateSummary(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# ExecutionResult
+# Phase 3: Agent execution gate, tool contracts, review (see Phase 3 spec)
 # ---------------------------------------------------------------------------
 
 
-class ExecutionResult(BaseModel):
-    execution_id: str = Field(default_factory=lambda: new_id("exec"))
+class ToolCallRequest(BaseModel):
+    tool_call_id: str
+    agent_id: str
+    tool_name: str
+    action_name: str
+    arguments: dict[str, Any] = Field(default_factory=dict)
+    target_resources: list[str] = Field(default_factory=list)
+    declared_purpose: str | None = None
+    agent_self_report: str | None = None
+    created_at: datetime = Field(default_factory=now_utc)
+
+    model_config = {"extra": "forbid"}
+
+
+class ExecutionTaskContract(BaseModel):
+    contract_id: str = Field(default_factory=lambda: new_id("etc"))
+    source_tool_call_id: str
+    agent_id: str
+    action_type: ExecutionActionType
+    tool_name: str
+    target_resources: list[str] = Field(default_factory=list)
+    expected_side_effects: list[str] = Field(default_factory=list)
+    allowed_side_effects: list[str] = Field(default_factory=list)
+    forbidden_side_effects: list[str] = Field(default_factory=list)
+    protected_resources: list[str] = Field(default_factory=list)
+    rollback_strategy: RollbackStrategyKind = "none"
+    rollback_required: bool = False
+    required_user_approval: bool = False
+    max_runtime_ms: int | None = None
+    max_output_bytes: int | None = None
+    network_allowed: bool = False
+    created_at: datetime = Field(default_factory=now_utc)
+
+    model_config = {"extra": "forbid"}
+
+
+class ToolCallRisk(BaseModel):
+    risk_level: RiskLevel
+    risk_score: float = Field(ge=0.0, le=1.0, default=0.0)
+    irreversible: bool = False
+    external_side_effect: bool = False
+    protected_resource_touched: bool = False
+    rollback_possible: bool = False
+    unknown_target: bool = False
+    reasons: list[str] = Field(default_factory=list)
+
+    model_config = {"extra": "forbid"}
+
+
+class ExecutionGateDecision(BaseModel):
+    decision_id: str = Field(default_factory=lambda: new_id("egd"))
+    contract_id: str
+    policy_action: ExecutionGatePolicyAction
+    reason: str
+    risk: ToolCallRisk
+    rde_result: RDEResult | None = None
+    relation_context: RelationContext | None = None
+    rollback_plan_required: bool = False
+    review_request_id: str | None = None
+    audit_event_id: str | None = None
+    created_at: datetime = Field(default_factory=now_utc)
+
+    model_config = {"extra": "forbid"}
+
+
+class ExecutionGateEvaluation(BaseModel):
+    """Pre-execution gate outcome: policy decision plus the task contract used for execution."""
+
+    decision: ExecutionGateDecision
+    contract: ExecutionTaskContract
+
+    model_config = {"extra": "forbid"}
+
+
+class ToolExecutionResult(BaseModel):
+    """Outcome of Safe Execution Runtime (Phase 3 spec: ExecutionResult)."""
+
+    execution_id: str = Field(default_factory=lambda: new_id("tex"))
+    contract_id: str
+    tool_call_id: str
+    status: ToolExecutionStatus
+    exit_code: int | None = None
+    stdout: str | None = None
+    stderr: str | None = None
+    changed_resources: list[str] = Field(default_factory=list)
+    observed_side_effects: list[str] = Field(default_factory=list)
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    rollback_plan_id: str | None = None
+    error_message: str | None = None
+    policy_decision_id: str | None = None
+    audit_event_id: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    created_at: datetime = Field(default_factory=now_utc)
+
+    model_config = {"extra": "forbid"}
+
+
+class PostExecutionDiff(BaseModel):
+    diff_id: str = Field(default_factory=lambda: new_id("ped"))
+    contract_id: str
+    before_snapshot_id: str | None = None
+    after_snapshot_id: str | None = None
+    changed_resources: list[str] = Field(default_factory=list)
+    unexpected_side_effects: list[str] = Field(default_factory=list)
+    protected_resource_changes: list[str] = Field(default_factory=list)
+    structural_diff: StructuralDiff | None = None
+    semantic_delta: SemanticDelta | None = None
+    created_at: datetime = Field(default_factory=now_utc)
+
+    model_config = {"extra": "forbid"}
+
+
+class RollbackPlan(BaseModel):
+    rollback_plan_id: str = Field(default_factory=lambda: new_id("rbp"))
+    contract_id: str
+    strategy: RollbackStrategyKind
+    target_resources: list[str] = Field(default_factory=list)
+    snapshot_refs: list[str] = Field(default_factory=list)
+    reverse_patch_path: str | None = None
+    manual_steps: list[str] = Field(default_factory=list)
+    validated: bool = False
+    validation_message: str | None = None
+    created_at: datetime = Field(default_factory=now_utc)
+
+    model_config = {"extra": "forbid"}
+
+
+class RollbackResult(BaseModel):
+    rollback_result_id: str = Field(default_factory=lambda: new_id("rbr"))
+    rollback_plan_id: str
+    status: Literal[
+        "not_required",
+        "completed",
+        "failed",
+        "manual_required",
+        "not_possible",
+    ]
+    restored_resources: list[str] = Field(default_factory=list)
+    error_message: str | None = None
+    audit_event_id: str | None = None
+    completed_at: datetime | None = None
+
+    model_config = {"extra": "forbid"}
+
+
+class ReviewRequest(BaseModel):
+    review_request_id: str = Field(default_factory=lambda: new_id("rrq"))
+    contract_id: str
+    tool_call_id: str
+    agent_id: str
+    reason: str
+    risk: ToolCallRisk
+    proposed_action_summary: str = ""
+    expected_side_effects: list[str] = Field(default_factory=list)
+    forbidden_side_effects: list[str] = Field(default_factory=list)
+    rollback_plan: RollbackPlan | None = None
+    rde_result: RDEResult | None = None
+    relation_context: RelationContext | None = None
+    status: ReviewRequestStatus = "pending"
+    created_at: datetime = Field(default_factory=now_utc)
+
+    model_config = {"extra": "forbid"}
+
+
+class ReviewDecision(BaseModel):
+    review_decision_id: str = Field(default_factory=lambda: new_id("rvd"))
+    review_request_id: str
+    reviewer_id: str
+    decision: ReviewerDecisionKind
+    reason: str
+    approved_at: datetime | None = None
+    created_at: datetime = Field(default_factory=now_utc)
+
+    model_config = {"extra": "forbid"}
+
+
+class SemanticEvaluationRequest(BaseModel):
+    evaluation_id: str = Field(default_factory=lambda: new_id("sevr"))
+    contract_id: str
+    tool_call_id: str
+    phase: Literal["pre_execution", "post_execution"] = "pre_execution"
+    created_at: datetime = Field(default_factory=now_utc)
+
+    model_config = {"extra": "forbid"}
+
+
+class SemanticEvaluationResult(BaseModel):
+    evaluation_id: str = Field(default_factory=lambda: new_id("sev"))
+    confidence: float = Field(ge=0.0, le=1.0, default=0.0)
+    suspected_delta_m: list[str] = Field(default_factory=list)
+    preserved_elements: list[str] = Field(default_factory=list)
+    transformed_elements: list[str] = Field(default_factory=list)
+    inferred_extensions: list[str] = Field(default_factory=list)
+    unresolved_elements: list[str] = Field(default_factory=list)
+    drift_risks: list[str] = Field(default_factory=list)
+    recommendation: SemanticEvaluatorRecommendation = "no_issue"
+    explanation: str = ""
+    created_at: datetime = Field(default_factory=now_utc)
+
+    model_config = {"extra": "forbid"}
+
+
+# ---------------------------------------------------------------------------
+# ModificationOutcome (Phase 1 policy-driven apply / halt)
+# ---------------------------------------------------------------------------
+
+
+class ModificationOutcome(BaseModel):
+    """Phase 1: result of ``apply_or_halt`` (would-apply vs halt vs pending review)."""
+
+    outcome_id: str = Field(default_factory=lambda: new_id("exec"))
     contract_id: str
     policy_decision_id: str
     outcome: Literal["applied", "halted", "rejected", "pending_review"]
