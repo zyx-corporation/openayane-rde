@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Project management policy
+    url: https://github.com/zyx-corporation/openayane-rde/blob/main/docs/01_project_management_ja.md
+    about: Read the OpenAyane RDE project management policy before creating an issue.
