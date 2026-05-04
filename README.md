@@ -27,10 +27,10 @@ make paper
 
 ## Development (Python package and tests)
 
-CI (GitHub Actions) runs on **Python 3.11 and 3.12** with: `pip install -e '.[dev,markdown]'`, then `pytest`, `ruff check src tests`, and `mypy src`. Match that locally with the same Python versions.
+CI (GitHub Actions) runs on **Python 3.12** with: `pip install -e '.[dev,markdown]'`, then `pytest`, `ruff check src tests`, and `mypy src`. Match that locally with **Python 3.12 or newer**.
 
 ```bash
-# Use 3.11 or 3.12 (same as CI). macOS: brew install python@3.12
+# Use 3.12+ (same as CI). macOS: brew install python@3.12
 python3.12 -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
 python -m pip install -U pip
@@ -41,7 +41,7 @@ ruff check src tests
 mypy src
 ```
 
-From the repository root, **`make venv`** picks `python3.12` or `python3.11` on your PATH (no 3.13 fallback). Then **`make dev-install`**, **`make test`**, and **`make ci`** (full CI parity: pytest + ruff + mypy). Override the interpreter with `make venv PY=/opt/homebrew/bin/python3.11`.
+From the repository root, **`make venv`** picks `python3.12` or `python3.13` on your PATH. Then **`make dev-install`**, **`make test`**, and **`make ci`** (full CI parity: pytest + ruff + mypy). Override the interpreter with `make venv PY=/path/to/python3.12`.
 
 If you see `ModuleNotFoundError: No module named 'pydantic'`, you are not using the venv where dependencies were installed, or you have not run `pip install -e '.[dev,markdown]'` yet.
 

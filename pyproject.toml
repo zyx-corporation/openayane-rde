@@ -7,7 +7,7 @@ name = "openayane-rde"
 version = "0.1.0"
 description = "OpenAyane RDE: structural and semantic deviation evaluation for generative and agentic systems"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 license = { text = "MIT" }
 authors = [
   { name = "Tomoyuki Kano" }
@@ -47,7 +47,7 @@ line-length = 100
 src = ["src", "tests"]
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 plugins = ["pydantic.mypy"]
 files = ["src/openayane_rde", "tests"]
 mypy_path = "src"

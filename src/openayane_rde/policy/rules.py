@@ -6,23 +6,14 @@ or falling back to hard-coded defaults.
 
 from __future__ import annotations
 
+from typing import assert_never
+
 from openayane_rde.core.models import (
     PolicyActionKind,
-    RDEClassification,
     RDEResult,
     RelationContext,
     TaskContract,
 )
-
-# Default mapping when review_policy is not consulted.
-_DEFAULT_POLICY_MAP: dict[RDEClassification, PolicyActionKind] = {
-    "preserved": "approve",
-    "authorized_deviation": "approve_with_notes",
-    "benign_incidental_drift": "approve_with_notes",
-    "suspicious_drift": "human_review",
-    "critical_corruption": "halt",
-    "creative_deviation": "approve_with_notes",
-}
 
 _REVIEW_POLICY_ACTION_MAP: dict[str, PolicyActionKind] = {
     "auto_approve": "approve",
@@ -120,5 +111,4 @@ def decide_action(
     if classification == "creative_deviation":
         base = _REVIEW_POLICY_ACTION_MAP.get(review.authorized_deviation, "human_review")
         return _adjust_for_history(base)
-    act = _DEFAULT_POLICY_MAP.get(classification, "human_review")
-    return act, []
+    assert_never(classification)
