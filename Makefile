@@ -12,14 +12,16 @@ SHELL := /bin/sh
 PAPER_DIR := paper
 FIG_DIR := $(PAPER_DIR)/figures
 
-TEX := $(PAPER_DIR)/openayane_implementation_plan_final_ja.tex
-PDF := $(PAPER_DIR)/openayane_implementation_plan_final_ja.pdf
+TEX_NAME := openayane_implementation_plan_final_ja.tex
+PDF_NAME := openayane_implementation_plan_final_ja.pdf
+TEX := $(PAPER_DIR)/$(TEX_NAME)
+PDF := $(PAPER_DIR)/$(PDF_NAME)
 
 FLOW_SVG := $(FIG_DIR)/openayane_implementation_flow.svg
 FLOW_PNG := $(FIG_DIR)/openayane_implementation_flow.png
 
 LATEX := xelatex
-LATEXFLAGS := -interaction=nonstopmode -halt-on-error -output-directory=$(PAPER_DIR)
+LATEXFLAGS := -interaction=nonstopmode -halt-on-error
 PNG_WIDTH := 2400
 
 .PHONY: all figures paper clean distclean check-tools
@@ -43,10 +45,11 @@ $(FLOW_PNG): $(FLOW_SVG)
 		python3 -c "import cairosvg; cairosvg.svg2png(url='$(FLOW_SVG)', write_to='$(FLOW_PNG)', output_width=$(PNG_WIDTH))"; \
 	fi
 
+# Build from inside paper/ so LaTeX resolves figures/openayane_implementation_flow.png correctly.
 # The PDF explicitly depends on the PNG figure so the paper always embeds the generated PNG.
 $(PDF): $(TEX) $(FLOW_PNG)
-	$(LATEX) $(LATEXFLAGS) $(TEX)
-	$(LATEX) $(LATEXFLAGS) $(TEX)
+	cd $(PAPER_DIR) && $(LATEX) $(LATEXFLAGS) $(TEX_NAME)
+	cd $(PAPER_DIR) && $(LATEX) $(LATEXFLAGS) $(TEX_NAME)
 
 paper: $(PDF)
 
