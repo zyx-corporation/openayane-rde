@@ -7,7 +7,6 @@ import json
 import pytest
 
 from openayane_rde.contract.builder import build_contract
-from openayane_rde.core.models import GeneratorOutput, ModelInfo, SelfReport
 from openayane_rde.diff.json_diff import JsonDiff
 
 

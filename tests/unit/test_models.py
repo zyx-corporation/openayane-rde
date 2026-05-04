@@ -9,14 +9,10 @@ from openayane_rde.core.models import (
     AuditEvent,
     GeneratorOutput,
     ModelInfo,
-    OutputPolicy,
     PolicyDecision,
     RDEResult,
-    ReviewPolicy,
-    ScoreDetails,
     SelfReport,
     StructuralDiff,
-    TargetScope,
     TaskContract,
 )
 from openayane_rde.contract.builder import build_contract

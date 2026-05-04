@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
 
 from openayane_rde.contract.builder import build_contract
 from openayane_rde.core.models import GeneratorOutput, ModelInfo, SelfReport

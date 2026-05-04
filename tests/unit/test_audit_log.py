@@ -5,7 +5,6 @@ from __future__ import annotations
 import tempfile
 from pathlib import Path
 
-import pytest
 
 from openayane_rde.audit.hash import sha256_text
 from openayane_rde.audit.log import append_event, load_events

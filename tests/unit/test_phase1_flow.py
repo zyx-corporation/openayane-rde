@@ -6,8 +6,8 @@ Verifies the full evaluation pipeline described in phase1_implementation_plan.md
     semantic_delta  = semantic_delta_stub(structural_diff)
     rde_result      = evaluate_rde(...)
     policy_decision = decide_policy(rde_result, task_contract)
-    audit_event     = write_audit_event(...)
-    return policy_decision
+    audit_event     = write_audit_event(...)  # optional
+    return Phase1EvaluationResult(...)
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ import json
 import tempfile
 from pathlib import Path
 
-from openayane_rde import run_phase1_evaluation
+from openayane_rde import Phase1EvaluationResult, run_phase1_evaluation
 from openayane_rde.audit.log import load_events
 from openayane_rde.contract.builder import build_contract
 from openayane_rde.core.models import GeneratorOutput, ModelInfo, SelfReport
@@ -54,13 +54,17 @@ def test_flow_markdown_preserved() -> None:
     contract = make_contract()
     go = make_go(contract.contract_id, text)  # type: ignore[union-attr]
 
-    decision = run_phase1_evaluation(
+    result = run_phase1_evaluation(
         original=text,
         generator_output=go,
         task_contract=contract,  # type: ignore[arg-type]
         domain="markdown",
     )
 
+    assert isinstance(result, Phase1EvaluationResult)
+    assert result.audit_event is None
+    assert result.structural_diff.contract_id == contract.contract_id  # type: ignore[union-attr]
+    decision = result.policy_decision
     assert decision.action == "approve"
     assert decision.contract_id == contract.contract_id  # type: ignore[union-attr]
 
@@ -76,14 +80,14 @@ def test_flow_markdown_citation_deleted_halts() -> None:
     contract = make_contract()
     go = make_go(contract.contract_id, generated)  # type: ignore[union-attr]
 
-    decision = run_phase1_evaluation(
+    result = run_phase1_evaluation(
         original=original,
         generator_output=go,
         task_contract=contract,  # type: ignore[arg-type]
         domain="markdown",
     )
 
-    assert decision.action == "halt"
+    assert result.policy_decision.action == "halt"
 
 
 # ---------------------------------------------------------------------------
@@ -101,7 +105,7 @@ def test_flow_json_required_field_deleted_halts() -> None:
     )
     go = make_go(contract.contract_id, generated)  # type: ignore[union-attr]
 
-    decision = run_phase1_evaluation(
+    result = run_phase1_evaluation(
         original=original,
         generator_output=go,
         task_contract=contract,  # type: ignore[arg-type]
@@ -109,7 +113,7 @@ def test_flow_json_required_field_deleted_halts() -> None:
         required_json_fields=["name", "version", "status"],
     )
 
-    assert decision.action == "halt"
+    assert result.policy_decision.action == "halt"
 
 
 # ---------------------------------------------------------------------------
@@ -128,14 +132,14 @@ def test_flow_python_signature_changed_human_review() -> None:
     )
     go = make_go(contract.contract_id, generated)  # type: ignore[union-attr]
 
-    decision = run_phase1_evaluation(
+    result = run_phase1_evaluation(
         original=original,
         generator_output=go,
         task_contract=contract,  # type: ignore[arg-type]
         domain="python",
     )
 
-    assert decision.action in ("human_review", "halt")
+    assert result.policy_decision.action in ("human_review", "halt")
 
 
 # ---------------------------------------------------------------------------
@@ -151,7 +155,7 @@ def test_flow_audit_log_written() -> None:
     with tempfile.TemporaryDirectory() as tmpdir:
         log_path = Path(tmpdir) / "audit" / "events.jsonl"
 
-        decision = run_phase1_evaluation(
+        result = run_phase1_evaluation(
             original=text,
             generator_output=go,
             task_contract=contract,  # type: ignore[arg-type]
@@ -160,14 +164,16 @@ def test_flow_audit_log_written() -> None:
         )
 
         assert log_path.exists()
+        assert result.audit_event is not None
         events = load_events(log_path)
         assert len(events) == 1
 
         ev = events[0]
+        assert ev.event_id == result.audit_event.event_id
         assert ev.task_contract_id == contract.contract_id  # type: ignore[union-attr]
         assert ev.generator_output_id == go.output_id
         assert ev.rde_result_id is not None
-        assert ev.policy_decision_id == decision.decision_id
+        assert ev.policy_decision_id == result.policy_decision.decision_id
         assert ev.hash_before is not None
         assert ev.hash_after is not None
         assert ev.action == "evaluate_rde"
@@ -178,7 +184,7 @@ def test_flow_audit_log_not_written_when_path_is_none() -> None:
     contract = make_contract()
     go = make_go(contract.contract_id, text)  # type: ignore[union-attr]
 
-    decision = run_phase1_evaluation(
+    result = run_phase1_evaluation(
         original=text,
         generator_output=go,
         task_contract=contract,  # type: ignore[arg-type]
@@ -186,7 +192,8 @@ def test_flow_audit_log_not_written_when_path_is_none() -> None:
         audit_log_path=None,
     )
 
-    assert decision is not None
+    assert result.audit_event is None
+    assert result.policy_decision is not None
 
 
 # ---------------------------------------------------------------------------
@@ -207,7 +214,7 @@ def test_flow_self_report_mismatch_in_audit() -> None:
     with tempfile.TemporaryDirectory() as tmpdir:
         log_path = Path(tmpdir) / "events.jsonl"
 
-        decision = run_phase1_evaluation(
+        result = run_phase1_evaluation(
             original=original,
             generator_output=go,
             task_contract=contract,  # type: ignore[arg-type]
@@ -221,4 +228,4 @@ def test_flow_self_report_mismatch_in_audit() -> None:
         assert ev.payload.get("classification") in (
             "suspicious_drift", "critical_corruption"
         )
-        assert decision.action in ("human_review", "halt")
+        assert result.policy_decision.action in ("human_review", "halt")

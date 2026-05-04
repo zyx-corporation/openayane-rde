@@ -12,6 +12,7 @@ Detected elements:
 from __future__ import annotations
 
 import ast
+from collections.abc import Collection
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -162,11 +163,11 @@ def _extract_function(
     )
     if node.args.vararg:
         all_args_strs = [_arg_str(a) for a in all_args]
-        all_args_strs.append(f"*{node.args.vararg.name}")
+        all_args_strs.append(f"*{node.args.vararg.arg}")
     else:
         all_args_strs = [_arg_str(a) for a in all_args]
     if node.args.kwarg:
-        all_args_strs.append(f"**{node.args.kwarg.name}")
+        all_args_strs.append(f"**{node.args.kwarg.arg}")
 
     defaults = [ast.unparse(d) for d in node.args.defaults]
     returns = _annotation_str(node.returns)
@@ -221,7 +222,6 @@ class PythonAstDiff(StructuralDiffEngine):
         gen_import_keys = set(gen.imports.keys())
 
         for key in orig_import_keys - gen_import_keys:
-            info = orig.imports[key]
             deleted_nodes.append(
                 DiffNode(
                     path=f"/imports/{key}",
@@ -437,7 +437,7 @@ def _check_protected_fn_deleted(
     fn: _FunctionInfo,
     key: str,
     node_path: str,
-    protected: set[str],
+    protected: Collection[str],
     protected_element_changes: list[ProtectedChange],
 ) -> None:
     if fn.is_test and "tests" in protected:

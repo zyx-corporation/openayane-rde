@@ -7,6 +7,7 @@ from openayane_rde.core.models import (
     GeneratorOutput,
     RDEResult,
     RelationContext,
+    RiskLevel,
     ScoreDetails,
     SemanticDelta,
     StructuralDiff,
@@ -100,28 +101,32 @@ def _build_violated_constraints(
     violations: list[ConstraintViolation] = []
 
     for pc in structural_diff.protected_element_changes:
-        severity = pc.risk_hint if pc.risk_hint != "unknown" else "medium"
-        if severity not in ("low", "medium", "high", "critical"):
-            severity = "medium"
+        pc_sev: RiskLevel
+        if pc.risk_hint in ("low", "medium", "high", "critical"):
+            pc_sev = pc.risk_hint
+        else:
+            pc_sev = "medium"
         violations.append(
             ConstraintViolation(
                 constraint=f"{pc.element} must not be {pc.change_type}",
                 path=pc.path,
                 description=pc.description,
-                severity=severity,  # type: ignore[arg-type]
+                severity=pc_sev,
             )
         )
 
     for sv in structural_diff.schema_violations:
-        severity = sv.risk_hint if sv.risk_hint != "unknown" else "high"
-        if severity not in ("low", "medium", "high", "critical"):
-            severity = "high"
+        sv_sev: RiskLevel
+        if sv.risk_hint in ("low", "medium", "high", "critical"):
+            sv_sev = sv.risk_hint
+        else:
+            sv_sev = "high"
         violations.append(
             ConstraintViolation(
                 constraint=sv.violation_type,
                 path=sv.path,
                 description=sv.description,
-                severity=severity,  # type: ignore[arg-type]
+                severity=sv_sev,
             )
         )
 
@@ -146,24 +151,24 @@ def _build_suspicious_elements(
     suspicious: list[SuspiciousElement] = []
 
     for pc in structural_diff.protected_element_changes:
-        risk = pc.risk_hint if pc.risk_hint != "unknown" else "high"
         suspicious.append(
             SuspiciousElement(
                 element=pc.element,
                 path=pc.path,
                 description=pc.description,
-                risk_hint=risk,  # type: ignore[arg-type]
+                risk_hint=("high" if pc.risk_hint == "unknown" else pc.risk_hint),
             )
         )
 
     for mismatch in structural_diff.self_report_mismatches:
-        risk = mismatch.risk_hint if mismatch.risk_hint != "unknown" else "high"
         suspicious.append(
             SuspiciousElement(
                 element="self_report_mismatch",
                 path="/self_report",
                 description=mismatch.description,
-                risk_hint=risk,  # type: ignore[arg-type]
+                risk_hint=(
+                    "high" if mismatch.risk_hint == "unknown" else mismatch.risk_hint
+                ),
             )
         )
 

@@ -22,14 +22,11 @@ from openayane_rde.core.models import (
     DiffNode,
     GeneratorOutput,
     ModelInfo,
-    PolicyDecision,
     ProtectedChange,
     RDEResult,
     SelfReport,
     SelfReportMismatch,
     StructuralDiff,
-    TaskContract,
-    Violation,
 )
 
 SCHEMAS_DIR = Path(__file__).parent.parent.parent / "schemas"

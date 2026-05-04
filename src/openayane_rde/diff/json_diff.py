@@ -12,6 +12,7 @@ Detected elements:
 from __future__ import annotations
 
 import json
+from collections.abc import Collection
 from typing import Any
 
 from openayane_rde.core.models import (
@@ -128,7 +129,7 @@ def _compare(
     orig: Any,
     gen: Any,
     path: str,
-    protected: set[str],
+    protected: Collection[str],
     required_fields: list[str],
     changed_nodes: list[DiffNode],
     added_nodes: list[DiffNode],
@@ -181,7 +182,7 @@ def _record_type_change(
     orig: Any,
     gen: Any,
     path: str,
-    protected: set[str],
+    protected: Collection[str],
     changed_nodes: list[DiffNode],
     protected_element_changes: list[ProtectedChange],
 ) -> None:
@@ -213,7 +214,7 @@ def _record_value_change(
     orig: Any,
     gen: Any,
     path: str,
-    protected: set[str],
+    protected: Collection[str],
     changed_nodes: list[DiffNode],
     protected_element_changes: list[ProtectedChange],
 ) -> None:
@@ -233,7 +234,7 @@ def _compare_dicts(
     orig: dict[str, Any],
     gen: dict[str, Any],
     path: str,
-    protected: set[str],
+    protected: Collection[str],
     required_fields: list[str],
     changed_nodes: list[DiffNode],
     added_nodes: list[DiffNode],
@@ -321,7 +322,7 @@ def _compare_lists(
     orig: list[Any],
     gen: list[Any],
     path: str,
-    protected: set[str],
+    protected: Collection[str],
     changed_nodes: list[DiffNode],
     added_nodes: list[DiffNode],
     deleted_nodes: list[DiffNode],

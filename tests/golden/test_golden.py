@@ -13,9 +13,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-import pytest
 
-from openayane_rde.contract.builder import build_contract
 from openayane_rde.core.models import (
     GeneratorOutput,
     ModelInfo,

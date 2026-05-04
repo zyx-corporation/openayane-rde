@@ -6,8 +6,8 @@ Implements the minimal flow described in phase1_implementation_plan.md Section 5
     semantic_delta = semantic_delta_stub(structural_diff)
     rde_result = evaluate_rde(task_contract, structural_diff, semantic_delta, generated_output)
     policy_decision = decide_policy(rde_result, task_contract)
-    audit_event = write_audit_event(...)
-    return policy_decision
+    audit_event = write_audit_event(...)  # optional, when logging
+    return Phase1EvaluationResult(...)
 """
 
 from __future__ import annotations
@@ -32,6 +32,7 @@ from openayane_rde.diff.markdown_diff import MarkdownDiff
 from openayane_rde.diff.python_ast_diff import PythonAstDiff
 from openayane_rde.policy.bridge import decide_policy
 from openayane_rde.rde.core import evaluate_rde
+from openayane_rde.runtime.result import Phase1EvaluationResult
 from openayane_rde.semantic.delta_engine import estimate_semantic_delta
 
 Domain = Literal["markdown", "json", "python"]
@@ -53,13 +54,14 @@ def run_structural_diff(
     generated = _extract_payload_text(generator_output)
 
     if domain == "json":
-        engine = JsonDiff(required_fields=required_json_fields or [])
-    elif domain in _DIFF_ENGINES:
-        engine = _DIFF_ENGINES[domain]
-    else:
-        raise ValueError(f"Unsupported domain: {domain!r}")
-
-    return engine.diff(original, generated, contract, generator_output)
+        return JsonDiff(required_fields=required_json_fields or []).diff(
+            original, generated, contract, generator_output
+        )
+    if domain in _DIFF_ENGINES:
+        return _DIFF_ENGINES[domain].diff(
+            original, generated, contract, generator_output
+        )
+    raise ValueError(f"Unsupported domain: {domain!r}")
 
 
 def _extract_payload_text(generator_output: GeneratorOutput) -> str:
@@ -79,7 +81,7 @@ def run_phase1_evaluation(
     required_json_fields: list[str] | None = None,
     relation_context: RelationContext | None = None,
     audit_log_path: str | Path | None = None,
-) -> PolicyDecision:
+) -> Phase1EvaluationResult:
     """Execute the Phase 1 evaluation flow.
 
     Steps:
@@ -87,10 +89,11 @@ def run_phase1_evaluation(
       2. Estimate semantic delta (stub)
       3. Evaluate RDE
       4. Decide policy
-      5. Write audit event (optional)
+      5. Write audit event (optional, when `audit_log_path` is set)
 
     Returns:
-        PolicyDecision with recommended action.
+        Phase1EvaluationResult with structural diff, semantic delta, RDE result,
+        policy decision, and optional audit event (if logged).
     """
     structural_diff = run_structural_diff(
         original,
@@ -112,8 +115,9 @@ def run_phase1_evaluation(
 
     policy_decision = decide_policy(rde_result, task_contract)
 
+    audit_event: AuditEvent | None = None
     if audit_log_path is not None:
-        _write_audit_event(
+        audit_event = _write_audit_event(
             task_contract=task_contract,
             generator_output=generator_output,
             structural_diff=structural_diff,
@@ -125,7 +129,13 @@ def run_phase1_evaluation(
             audit_log_path=audit_log_path,
         )
 
-    return policy_decision
+    return Phase1EvaluationResult(
+        structural_diff=structural_diff,
+        semantic_delta=semantic_delta,
+        rde_result=rde_result,
+        policy_decision=policy_decision,
+        audit_event=audit_event,
+    )
 
 
 def _write_audit_event(

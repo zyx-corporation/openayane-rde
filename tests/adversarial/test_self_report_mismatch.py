@@ -9,7 +9,6 @@ from openayane_rde.contract.builder import build_contract
 from openayane_rde.core.models import GeneratorOutput, ModelInfo, SelfReport
 from openayane_rde.diff.markdown_diff import MarkdownDiff
 from openayane_rde.diff.python_ast_diff import PythonAstDiff
-from openayane_rde.policy.bridge import decide_policy
 from openayane_rde.rde.core import evaluate_rde
 from openayane_rde.semantic.stub import semantic_delta_stub
 

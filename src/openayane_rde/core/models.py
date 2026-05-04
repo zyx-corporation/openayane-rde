@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from typing import Any, Literal
 
@@ -9,6 +10,8 @@ from pydantic import BaseModel, Field, field_validator
 
 from openayane_rde.core.ids import new_id
 from openayane_rde.core.time import now_utc
+
+_SHA256_HEX_PATTERN = re.compile(r"^sha256:[a-fA-F0-9]{64}$")
 
 # ---------------------------------------------------------------------------
 # Enums (represented as Literal types for easy extensibility)
@@ -374,8 +377,10 @@ class AuditEvent(BaseModel):
     def validate_hash(cls, v: str | None) -> str | None:
         if v is None:
             return v
-        if not (isinstance(v, str) and v.startswith("sha256:") and len(v) == 71):
-            raise ValueError(f"Hash must be in format 'sha256:<64 hex chars>', got: {v!r}")
+        if not isinstance(v, str) or _SHA256_HEX_PATTERN.fullmatch(v) is None:
+            raise ValueError(
+                f"Hash must match sha256:<64 hex digits>, got: {v!r}"
+            )
         return v
 
 

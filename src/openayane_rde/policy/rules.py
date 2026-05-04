@@ -50,16 +50,13 @@ def decide_action(
     review = contract.review_policy
 
     if classification == "preserved":
-        rp = review.preserved
-    elif classification == "authorized_deviation":
-        rp = review.authorized_deviation
-    elif classification == "benign_incidental_drift":
-        rp = review.benign_incidental_drift
-    elif classification == "suspicious_drift":
-        rp = review.suspicious_drift
-    elif classification == "creative_deviation":
-        rp = review.authorized_deviation
-    else:
-        return _DEFAULT_POLICY_MAP.get(classification, "human_review")
-
-    return _REVIEW_POLICY_ACTION_MAP.get(rp, "human_review")
+        return _REVIEW_POLICY_ACTION_MAP.get(review.preserved, "human_review")
+    if classification == "authorized_deviation":
+        return _REVIEW_POLICY_ACTION_MAP.get(review.authorized_deviation, "human_review")
+    if classification == "benign_incidental_drift":
+        return _REVIEW_POLICY_ACTION_MAP.get(review.benign_incidental_drift, "human_review")
+    if classification == "suspicious_drift":
+        return _REVIEW_POLICY_ACTION_MAP.get(review.suspicious_drift, "human_review")
+    if classification == "creative_deviation":
+        return _REVIEW_POLICY_ACTION_MAP.get(review.authorized_deviation, "human_review")
+    return _DEFAULT_POLICY_MAP.get(classification, "human_review")
