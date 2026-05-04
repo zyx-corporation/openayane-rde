@@ -145,3 +145,5 @@ def test_human_review_approve_dry_run_then_runtime(tmp_path: Path) -> None:
     events = load_events(audit_log)
     kinds = [e.payload.get("evaluation_kind") for e in events if e.action == "execution_gate_evaluated"]
     assert kinds == ["pre_synthetic"]
+    basis = [e.payload.get("evidence_basis") for e in events if e.action == "execution_gate_evaluated"]
+    assert basis == [["tool_risk_rule", "execution_contract"]]

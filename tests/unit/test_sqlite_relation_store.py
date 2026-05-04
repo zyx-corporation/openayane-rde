@@ -12,7 +12,13 @@ from openayane_rde.core.models import (
     ToolCallRisk,
 )
 from openayane_rde.relation.context_loader import relation_record_to_context
-from openayane_rde.relation.sqlite_store import SQLiteRelationStore
+from openayane_rde.relation.sqlite_store import SCHEMA_VERSION, SQLiteRelationStore
+
+
+def test_sqlite_applied_schema_versions(tmp_path: Path) -> None:
+    store = SQLiteRelationStore(tmp_path / "schema_ver.sqlite3")
+    assert store.applied_schema_versions() == [SCHEMA_VERSION]
+    assert store.applied_schema_versions() == [SCHEMA_VERSION]
 
 
 def test_sqlite_initialize_upsert_load_context(tmp_path: Path) -> None:

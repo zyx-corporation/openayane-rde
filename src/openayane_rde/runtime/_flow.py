@@ -19,6 +19,7 @@ from openayane_rde.audit.hash import sha256_text
 from openayane_rde.audit.log import append_event
 from openayane_rde.core.models import (
     AuditEvent,
+    EvidenceBasis,
     GeneratorOutput,
     PolicyDecision,
     PostExecutionDiff,
@@ -113,8 +114,13 @@ def run_phase1_evaluation(
         semantic_delta=semantic_delta,
         relation_context=relation_context,
     )
-    if rde_result.evaluation_kind is None:
-        rde_result = rde_result.model_copy(update={"evaluation_kind": "post_structural"})
+    _post_evidence: list[EvidenceBasis] = ["structural_diff", "semantic_delta"]
+    rde_result = rde_result.model_copy(
+        update={
+            "evaluation_kind": "post_structural",
+            "evidence_basis": _post_evidence,
+        }
+    )
 
     policy_decision = decide_policy(rde_result, task_contract, relation_context)
 
@@ -172,6 +178,7 @@ def _write_audit_event(
             "risk_level": rde_result.risk_level,
             "policy_action": policy_decision.action,
             "evaluation_kind": rde_result.evaluation_kind,
+            "evidence_basis": rde_result.evidence_basis,
         },
     )
     append_event(audit_log_path, event)
@@ -216,7 +223,12 @@ def run_phase1_evaluation_from_post_execution_diff(
         semantic_delta=semantic_delta,
         relation_context=relation_context,
     )
-    rde_result = rde_result.model_copy(update={"evaluation_kind": "post_structural"})
+    _post_evidence: list[EvidenceBasis] = ["structural_diff", "semantic_delta"]
+    if post_diff.unexpected_side_effects or post_diff.protected_resource_changes:
+        _post_evidence = _post_evidence + ["observed_side_effects"]
+    rde_result = rde_result.model_copy(
+        update={"evaluation_kind": "post_structural", "evidence_basis": _post_evidence}
+    )
 
     policy_decision = decide_policy(rde_result, task_contract, relation_context)
 
