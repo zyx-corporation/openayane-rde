@@ -6,21 +6,21 @@ Returns would-apply / halt / pending-review result.
 
 from __future__ import annotations
 
-from openayane_rde.core.models import ExecutionResult, PolicyDecision, TaskContract
+from openayane_rde.core.models import ModificationOutcome, PolicyDecision, TaskContract
 
 
 def apply_or_halt(
     contract: TaskContract,
     policy_decision: PolicyDecision,
-) -> ExecutionResult:
+) -> ModificationOutcome:
     """Determine whether to apply a change based on PolicyDecision.
 
-    Phase 1: does not write files. Returns an ExecutionResult indicating outcome.
+    Phase 1: does not write files. Returns a ModificationOutcome indicating outcome.
     """
     action = policy_decision.action
 
     if action == "halt":
-        return ExecutionResult(
+        return ModificationOutcome(
             contract_id=contract.contract_id,
             policy_decision_id=policy_decision.decision_id,
             outcome="halted",
@@ -31,7 +31,7 @@ def apply_or_halt(
         )
 
     if action in ("human_review", "request_revision"):
-        return ExecutionResult(
+        return ModificationOutcome(
             contract_id=contract.contract_id,
             policy_decision_id=policy_decision.decision_id,
             outcome="pending_review",
@@ -41,7 +41,7 @@ def apply_or_halt(
         )
 
     if action in ("approve", "approve_with_notes"):
-        return ExecutionResult(
+        return ModificationOutcome(
             contract_id=contract.contract_id,
             policy_decision_id=policy_decision.decision_id,
             outcome="applied",
@@ -51,7 +51,7 @@ def apply_or_halt(
             ),
         )
 
-    return ExecutionResult(
+    return ModificationOutcome(
         contract_id=contract.contract_id,
         policy_decision_id=policy_decision.decision_id,
         outcome="rejected",
