@@ -1,0 +1,28 @@
+{
+  "contract_id": "tc_golden_mismatch_001",
+  "mode": "preservation",
+  "target_scope": {
+    "files": ["original.md"],
+    "symbols": [],
+    "sections": ["Safety Evaluation Framework"]
+  },
+  "requested_action": "Improve readability while preserving all numbers, citations, and definitions.",
+  "allowed_delta_m": ["sentence restructuring", "minor wording improvements"],
+  "forbidden_delta_m": ["numeric change", "citation removal", "definition change"],
+  "protected_elements": ["numbers", "citations", "definitions"],
+  "output_policy": {
+    "require_patch": true,
+    "require_change_report": true,
+    "require_uncertainty_report": true
+  },
+  "review_policy": {
+    "preserved": "auto_approve",
+    "authorized_deviation": "approve_with_note",
+    "benign_incidental_drift": "approve_with_note",
+    "suspicious_drift": "human_review",
+    "critical_corruption": "halt"
+  },
+  "relation_context_ref": null,
+  "metadata": {},
+  "created_at": "2026-05-04T00:00:00Z"
+}

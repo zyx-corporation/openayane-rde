@@ -1,0 +1,1 @@
+"""OpenAyane RDE contract package."""

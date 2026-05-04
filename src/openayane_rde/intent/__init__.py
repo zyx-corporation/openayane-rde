@@ -1,0 +1,1 @@
+"""OpenAyane RDE intent package."""

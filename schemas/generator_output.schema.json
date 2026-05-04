@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/zyx-corporation/openayane-rde/schemas/generator_output.schema.json",
+  "title": "GeneratorOutput",
+  "type": "object",
+  "required": [
+    "output_id",
+    "contract_id",
+    "output_type",
+    "payload",
+    "self_report",
+    "model_info",
+    "created_at"
+  ],
+  "properties": {
+    "output_id": {
+      "type": "string",
+      "description": "Unique generator output identifier."
+    },
+    "contract_id": {
+      "type": "string",
+      "description": "TaskContract identifier that produced this output."
+    },
+    "output_type": {
+      "type": "string",
+      "enum": ["full_text", "patch", "plan", "tool_call"]
+    },
+    "payload": {
+      "description": "Generated content, patch, plan, or tool-call payload.",
+      "oneOf": [
+        { "type": "string" },
+        { "type": "object", "additionalProperties": true },
+        { "type": "array" }
+      ]
+    },
+    "self_report": {
+      "type": "object",
+      "required": [
+        "changed_elements",
+        "unchanged_elements",
+        "added_elements",
+        "deleted_elements",
+        "semantic_risk_notes",
+        "uncertainty_notes"
+      ],
+      "properties": {
+        "changed_elements": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "unchanged_elements": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "added_elements": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "deleted_elements": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "semantic_risk_notes": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "uncertainty_notes": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "model_info": {
+      "type": "object",
+      "required": ["provider", "model"],
+      "properties": {
+        "provider": {
+          "type": "string",
+          "enum": ["openai", "anthropic", "google", "local", "tool", "mock", "unknown"]
+        },
+        "model": {
+          "type": "string"
+        },
+        "temperature": {
+          "type": ["number", "null"]
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

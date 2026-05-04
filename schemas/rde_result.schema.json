@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/zyx-corporation/openayane-rde/schemas/rde_result.schema.json",
+  "title": "RDEResult",
+  "type": "object",
+  "required": [
+    "result_id",
+    "contract_id",
+    "classification",
+    "resonance_score",
+    "preservation_score",
+    "authorization_score",
+    "risk_level",
+    "violated_constraints",
+    "suspicious_elements",
+    "required_action",
+    "explanation",
+    "created_at"
+  ],
+  "properties": {
+    "result_id": { "type": "string" },
+    "contract_id": { "type": "string" },
+    "classification": {
+      "type": "string",
+      "enum": [
+        "preserved",
+        "authorized_deviation",
+        "benign_incidental_drift",
+        "suspicious_drift",
+        "critical_corruption",
+        "creative_deviation"
+      ]
+    },
+    "resonance_score": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0
+    },
+    "preservation_score": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0
+    },
+    "authorization_score": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0
+    },
+    "risk_level": {
+      "type": "string",
+      "enum": ["low", "medium", "high", "critical"]
+    },
+    "violated_constraints": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/constraint_violation" }
+    },
+    "suspicious_elements": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/suspicious_element" }
+    },
+    "required_action": {
+      "type": "string",
+      "enum": [
+        "approve",
+        "approve_with_notes",
+        "request_revision",
+        "human_review",
+        "halt",
+        "rollback"
+      ]
+    },
+    "explanation": {
+      "type": "string"
+    },
+    "score_details": {
+      "type": ["object", "null"],
+      "properties": {
+        "structural_risk_score": { "type": "number" },
+        "semantic_delta_score": { "type": "number" },
+        "self_report_mismatch_score": { "type": "number" },
+        "relation_adjustment_score": { "type": "number" }
+      },
+      "additionalProperties": true
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "$defs": {
+    "constraint_violation": {
+      "type": "object",
+      "required": ["constraint", "description", "severity"],
+      "properties": {
+        "constraint": { "type": "string" },
+        "path": { "type": ["string", "null"] },
+        "description": { "type": "string" },
+        "severity": {
+          "type": "string",
+          "enum": ["low", "medium", "high", "critical"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "suspicious_element": {
+      "type": "object",
+      "required": ["element", "path", "description", "risk_hint"],
+      "properties": {
+        "element": { "type": "string" },
+        "path": { "type": "string" },
+        "description": { "type": "string" },
+        "risk_hint": {
+          "type": "string",
+          "enum": ["low", "medium", "high", "critical", "unknown"]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

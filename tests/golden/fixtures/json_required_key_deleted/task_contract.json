@@ -1,0 +1,28 @@
+{
+  "contract_id": "tc_golden_json_rk_001",
+  "mode": "preservation",
+  "target_scope": {
+    "files": ["original.json"],
+    "symbols": [],
+    "sections": []
+  },
+  "requested_action": "Update description field only.",
+  "allowed_delta_m": ["description update"],
+  "forbidden_delta_m": ["required field deletion", "key deletion"],
+  "protected_elements": ["schema_keys", "required_fields"],
+  "output_policy": {
+    "require_patch": true,
+    "require_change_report": true,
+    "require_uncertainty_report": false
+  },
+  "review_policy": {
+    "preserved": "auto_approve",
+    "authorized_deviation": "approve_with_note",
+    "benign_incidental_drift": "approve_with_note",
+    "suspicious_drift": "human_review",
+    "critical_corruption": "halt"
+  },
+  "relation_context_ref": null,
+  "metadata": {"required_fields": ["name", "version", "status"]},
+  "created_at": "2026-05-04T00:00:00Z"
+}

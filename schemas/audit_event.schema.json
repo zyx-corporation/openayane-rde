@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/zyx-corporation/openayane-rde/schemas/audit_event.schema.json",
+  "title": "AuditEvent",
+  "type": "object",
+  "required": [
+    "event_id",
+    "timestamp",
+    "actor",
+    "action",
+    "explanation"
+  ],
+  "properties": {
+    "event_id": { "type": "string" },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "actor": {
+      "type": "string",
+      "enum": ["user", "agent", "generator", "rde", "policy", "runtime", "reviewer", "system"]
+    },
+    "task_contract_id": {
+      "type": ["string", "null"]
+    },
+    "generator_output_id": {
+      "type": ["string", "null"]
+    },
+    "structural_diff_id": {
+      "type": ["string", "null"]
+    },
+    "semantic_delta_id": {
+      "type": ["string", "null"]
+    },
+    "rde_result_id": {
+      "type": ["string", "null"]
+    },
+    "policy_decision_id": {
+      "type": ["string", "null"]
+    },
+    "execution_result_id": {
+      "type": ["string", "null"]
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "create_contract",
+        "generate_output",
+        "run_structural_diff",
+        "estimate_semantic_delta",
+        "evaluate_rde",
+        "make_policy_decision",
+        "apply_change",
+        "reject_change",
+        "halt",
+        "rollback",
+        "request_human_review",
+        "submit_human_review",
+        "update_relation_store",
+        "error"
+      ]
+    },
+    "hash_before": {
+      "type": ["string", "null"],
+      "pattern": "^(sha256:[a-fA-F0-9]{64})$"
+    },
+    "hash_after": {
+      "type": ["string", "null"],
+      "pattern": "^(sha256:[a-fA-F0-9]{64})$"
+    },
+    "explanation": {
+      "type": "string"
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "error": {
+      "type": ["object", "null"],
+      "properties": {
+        "error_type": { "type": "string" },
+        "message": { "type": "string" },
+        "recoverable": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}

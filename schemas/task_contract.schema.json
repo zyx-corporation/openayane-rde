@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/zyx-corporation/openayane-rde/schemas/task_contract.schema.json",
+  "title": "TaskContract",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "mode",
+    "target_scope",
+    "requested_action",
+    "allowed_delta_m",
+    "forbidden_delta_m",
+    "protected_elements",
+    "output_policy",
+    "review_policy",
+    "created_at"
+  ],
+  "properties": {
+    "contract_id": {
+      "type": "string",
+      "description": "Unique contract identifier. UUID recommended."
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["preservation", "creative", "refactor", "research", "execution"]
+    },
+    "target_scope": {
+      "type": "object",
+      "required": ["files", "symbols", "sections"],
+      "properties": {
+        "files": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "symbols": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "sections": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "requested_action": {
+      "type": "string"
+    },
+    "allowed_delta_m": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "forbidden_delta_m": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "protected_elements": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "claims",
+          "definitions",
+          "numbers",
+          "dates",
+          "citations",
+          "references",
+          "constraints",
+          "headings",
+          "schema_keys",
+          "required_fields",
+          "types",
+          "function_signatures",
+          "public_api",
+          "imports",
+          "tests",
+          "safety_conditions",
+          "permissions",
+          "credentials"
+        ]
+      }
+    },
+    "output_policy": {
+      "type": "object",
+      "required": ["require_patch", "require_change_report", "require_uncertainty_report"],
+      "properties": {
+        "require_patch": { "type": "boolean" },
+        "require_change_report": { "type": "boolean" },
+        "require_uncertainty_report": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "review_policy": {
+      "type": "object",
+      "required": [
+        "preserved",
+        "authorized_deviation",
+        "benign_incidental_drift",
+        "suspicious_drift",
+        "critical_corruption"
+      ],
+      "properties": {
+        "preserved": {
+          "type": "string",
+          "enum": ["auto_approve", "approve_with_note", "human_review"]
+        },
+        "authorized_deviation": {
+          "type": "string",
+          "enum": ["auto_approve", "approve_with_note", "human_review"]
+        },
+        "benign_incidental_drift": {
+          "type": "string",
+          "enum": ["approve_with_note", "human_review"]
+        },
+        "suspicious_drift": {
+          "type": "string",
+          "enum": ["human_review", "request_revision"]
+        },
+        "critical_corruption": {
+          "type": "string",
+          "enum": ["halt", "rollback"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "relation_context_ref": {
+      "type": ["string", "null"]
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}
