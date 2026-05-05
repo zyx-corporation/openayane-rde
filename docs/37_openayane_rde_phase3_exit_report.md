@@ -1,6 +1,6 @@
 ---
 title: "OpenAyane RDE Phase 3 Exit Report"
-version: "0.1"
+version: "0.2"
 date: "2026-05-05"
 status: "exit-fixed"
 ---
@@ -14,6 +14,8 @@ This document fixes the Phase 3 exit boundary for OpenAyane RDE.
 Phase 3 is not declared production-ready. It is declared **L1 internal-pilot ready with L1+ hardening**. The purpose of this report is to make that distinction explicit before starting Phase 4 specification work.
 
 This document also records which parts of Phase 3 are implementation-complete, which parts are design or planning complete, and which concerns are intentionally carried into Phase 4 or later L2/L3 hardening.
+
+Related operational roadmap: `docs/33_openayane_rde_phase3_production_readiness_plan.md`.
 
 ## 1. Exit statement
 
@@ -93,6 +95,8 @@ The following table fixes the completion interpretation for closed Phase 3 issue
 | #22 | Rollback audit | implementation / L1+ hardening | Rollback audit and recovery playbook are included. |
 | #23 | Semantic evaluator seam | implementation / L1+ hardening | Optional evaluator integration seam and exports are included. |
 
+Tracking note: #9 refers to the initial Human Review Workflow core. #17 refers to later Human Review hardening and the safety-side transformation where Critical risk defaults to halt unless explicit policy configuration routes it to human review.
+
 ## 4. Achieved L1 criteria
 
 Phase 3 satisfies the internal-pilot criteria below.
@@ -104,7 +108,9 @@ Phase 3 satisfies the internal-pilot criteria below.
 | Synthetic vs structural distinction | achieved | `evaluation_kind` and `evidence_basis` prevent synthetic gate results from being mistaken for structural RDE. |
 | Path traversal / symlink tests | achieved minimally | Basic regression tests exist; TOCTOU / file descriptor race remains future hardening. |
 | Human review to runtime resume | achieved | `approve` and `approve_dry_run` paths exist. |
-| CI signal | achieved for recent PR marker | PR #24 CI succeeded before merge. Main workflow should continue to be monitored after future commits. |
+| CI signal | achieved for recent PR marker | PR #24 CI run `25352620232` / run #34 succeeded before merge on 2026-05-05. Main workflow should continue to be monitored after future commits. |
+
+CI reference: `https://github.com/zyx-corporation/openayane-rde/actions/runs/25352620232`.
 
 ## 5. Not achieved L2 criteria
 
@@ -239,3 +245,10 @@ Phase 3 is closed as L1 internal-pilot ready with L1+ hardening.
 Phase 3 is not closed as L2 bounded-production ready.
 Phase 4 may start with specification and interface skeleton work.
 ```
+
+## 10. Revision history
+
+| Version | Date | Notes |
+|---|---|---|
+| 0.1 | 2026-05-05 | Initial Phase 3 exit boundary. |
+| 0.2 | 2026-05-05 | Added Human Review issue-tracking note, CI run reference, and operational roadmap link. |
