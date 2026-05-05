@@ -130,3 +130,15 @@ def test_audit_policy_decision_splits_rde_and_institution_payload() -> None:
     assert ev.payload["rde_classification"] == "preserved"
     assert ev.payload["institution_rule_id"] == "rule_pub"
     assert ev.payload["institutional_rationale"] == "Org rule requires review."
+
+
+def test_audit_policy_decision_payload_allows_null_institution_fields() -> None:
+    pd = PolicyDecision(
+        contract_id="tc_2",
+        rde_result_id="rde_2",
+        action="approve",
+        rationale="RDE-only path.",
+    )
+    ev = audit_event_policy_decision(pd, rde_classification="preserved")
+    assert ev.payload["institution_rule_id"] is None
+    assert ev.payload["institutional_rationale"] is None

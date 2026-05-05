@@ -304,3 +304,28 @@ def test_decide_require_more_evidence_no_matching_rule() -> None:
     inp = HandoffDecisionInput("execute", "notification", "low", False)
     d = bridge.decide(h, [_rule()], _reviewer(), decision_input=inp)
     assert d.decision == "require_more_evidence"
+
+
+def test_decide_accepts_irreversible_when_rule_and_reviewer_allow() -> None:
+    """Boundary: irreversible path reaches accept when rule and ReviewerAuthority permit."""
+
+    bridge = DeterministicInstitutionBridge()
+    h = EvidenceHandoff(
+        handoff_id="h1",
+        contract_id="c1",
+        tool_call_id="t1",
+        audit_event_ids=["ae1"],
+        evidence_basis=["human_review_decision"],
+        explanation="irrev allowed",
+        created_at=_dt(),
+    )
+    inp = HandoffDecisionInput("network", "publishing", "high", True)
+    d = bridge.decide(
+        h,
+        [_rule(allows_irreversible=True)],
+        _reviewer(can_irrev=True),
+        decision_input=inp,
+    )
+    assert d.decision == "accept"
+    assert d.irreversible_accepted is True
+    assert d.rule_id == "rule_net"

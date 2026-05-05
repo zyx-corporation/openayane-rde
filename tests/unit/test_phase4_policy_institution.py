@@ -177,3 +177,47 @@ def test_provenance_splits_layers() -> None:
     assert prov.rde_classification == "preserved"
     assert prov.institution_rule_id == "rule_pub"
     assert prov.policy_action == "human_review"
+
+
+def test_provenance_records_pop_verification_flags() -> None:
+    contract, rde = _contract_and_rde()
+    base = decide_policy(rde, contract)  # type: ignore[arg-type]
+    prov = provenance_from_policy_decision(
+        base,
+        rde,
+        pop_verification_attempted=True,
+        pop_verification_passed=False,
+    )
+    assert prov.pop_verification_attempted is True
+    assert prov.pop_verification_passed is False
+
+
+def test_rollback_plan_only_adds_institution_note_without_escalating_action() -> None:
+    """InstitutionRule.requires_rollback_plan alone must not force human_review."""
+
+    contract, rde = _contract_and_rde()
+    reg = InstitutionRuleRegistry(
+        [_rule(requires_rollback_plan=True, requires_human_review=False)]
+    )
+    out = decide_policy_with_institution(
+        rde,
+        contract,  # type: ignore[arg-type]
+        None,
+        reg,
+        action_type="network",
+        side_effect="publishing",
+    )
+    assert out.action == "approve"
+    assert out.institution_rule_id == "rule_pub"
+    assert out.institutional_rationale is not None
+    assert "rollback" in out.institutional_rationale.lower()
+
+
+def test_registry_register_preserves_first_match_order() -> None:
+    r1 = _rule(rule_id="first")
+    r2 = _rule(rule_id="second")
+    reg = InstitutionRuleRegistry()
+    reg.register(r1)
+    reg.register(r2)
+    assert reg.first_match(action_type="network", side_effect="publishing") is r1
+    assert len(reg.rules) == 2

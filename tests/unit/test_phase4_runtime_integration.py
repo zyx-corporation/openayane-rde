@@ -49,6 +49,22 @@ def _rule_read_requires_review() -> InstitutionRule:
     )
 
 
+def _rule_read_rollback_note_only() -> InstitutionRule:
+    return InstitutionRule(
+        rule_id="rule_read_rb",
+        name="read rollback note",
+        description="d",
+        scope=["*"],
+        applies_to_action_types=["read"],
+        applies_to_side_effects=["none"],
+        minimum_authority_level="L1",
+        evidence_required=[],
+        created_at=_dt(),
+        requires_human_review=False,
+        requires_rollback_plan=True,
+    )
+
+
 def test_run_phase1_evaluation_institution_escalates_approve_to_human_review() -> None:
     text = "# Title\n\nSome content. See [ref](https://example.com). Value is 42."
     contract = build_contract(
@@ -100,6 +116,33 @@ def test_evaluate_before_execution_institution_escalates_low_risk_read(tmp_path)
     )
     assert ev.decision.policy_action == "human_review"
     assert ev.decision.institution_rule_id == "rule_read_gate"
+
+
+def test_evaluate_before_execution_rollback_plan_only_keeps_approve(tmp_path) -> None:
+    """requires_rollback_plan without requires_human_review: still approve, institution note set."""
+
+    store = JSONRelationStore(tmp_path / "rel.json")
+    tc = ToolCallRequest(
+        tool_call_id="p4_rb",
+        agent_id="agent",
+        tool_name="read_file",
+        action_name="invoke",
+        arguments={"path": "doc.txt"},
+        created_at=now_utc(),
+    )
+    reg = InstitutionRuleRegistry([_rule_read_rollback_note_only()])
+    ev = evaluate_before_execution(
+        tc,
+        store,
+        ExecutionPolicyConfig(),
+        subject_id="s",
+        object_id="o",
+        institution_registry=reg,
+    )
+    assert ev.decision.policy_action == "approve"
+    assert ev.decision.institution_rule_id == "rule_read_rb"
+    assert ev.decision.institutional_rationale is not None
+    assert "rollback" in ev.decision.institutional_rationale.lower()
 
 
 def test_evaluate_before_execution_pop_critical_fail_halts_when_not_already_halted(
