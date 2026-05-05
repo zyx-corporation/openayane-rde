@@ -25,6 +25,8 @@ from openayane_rde.core.models import (
     ToolCallRisk,
     ToolExecutionResult,
 )
+from openayane_rde.institution.pop_uid import PopUidAdapter
+from openayane_rde.institution.rule_registry import InstitutionRuleRegistry
 from openayane_rde.policy.execution_rules import (
     ExecutionPolicyConfig,
     apply_relation_history_to_execution_gate,
@@ -127,6 +129,83 @@ def _evaluation_with_audit(
     return ExecutionGateEvaluation(decision=gate, contract=evaluation.contract)
 
 
+def _apply_institution_to_execution_gate(
+    contract: ExecutionTaskContract,
+    gate: ExecutionGateDecision,
+    *,
+    institution_registry: InstitutionRuleRegistry | None,
+    pop_verifier: PopUidAdapter | None,
+    pop_subject_id: str | None,
+) -> ExecutionGateDecision:
+    """Optional Phase 4 overlay: PoP check for critical RDE risk, :class:`InstitutionRule` escalation."""
+
+    g = gate
+    rde = g.rde_result
+
+    if pop_verifier is not None and pop_subject_id is not None and rde is not None:
+        if rde.risk_level == "critical" and not pop_verifier.has_valid_pop(
+            pop_subject_id
+        ):
+            if g.policy_action != "halt":
+                inst = (
+                    "PoP-UID / institutional identity could not be verified; "
+                    "critical path halted by institution policy."
+                )
+                return g.model_copy(
+                    update={
+                        "policy_action": "halt",
+                        "reason": f"{g.reason} [Institution] {inst}",
+                        "institutional_rationale": inst,
+                    }
+                )
+
+    if institution_registry is None:
+        return g
+
+    rule = institution_registry.first_match(
+        action_type=contract.action_type,
+        side_effect=contract.external_side_effect_kind,
+    )
+    if rule is None:
+        return g
+
+    inst_parts: list[str] = []
+    new_action = g.policy_action
+    if rule.requires_human_review and new_action in (
+        "approve",
+        "approve_with_notes",
+        "dry_run_only",
+    ):
+        new_action = "human_review"
+        inst_parts.append(
+            f"InstitutionRule {rule.rule_id} requires human review before execution."
+        )
+    if rule.requires_rollback_plan:
+        inst_parts.append(
+            f"InstitutionRule {rule.rule_id} requires a recorded rollback plan."
+        )
+
+    inst_text = " ".join(inst_parts) if inst_parts else None
+    if new_action == g.policy_action and inst_text is None:
+        return g
+
+    new_reason = g.reason
+    if inst_text:
+        new_reason = f"{g.reason} [Institution] {inst_text}"
+    notes = list(g.policy_adjustment_notes)
+    if inst_text:
+        notes.append(inst_text)
+    return g.model_copy(
+        update={
+            "policy_action": new_action,
+            "reason": new_reason,
+            "institution_rule_id": rule.rule_id,
+            "institutional_rationale": inst_text,
+            "policy_adjustment_notes": notes,
+        }
+    )
+
+
 def evaluate_before_execution(
     tool_call: ToolCallRequest,
     relation_store: RelationStore,
@@ -137,6 +216,9 @@ def evaluate_before_execution(
     relation_type: str = "generator-document",
     protected_resource_paths: list[str] | None = None,
     audit_log_path: str | Path | None = None,
+    institution_registry: InstitutionRuleRegistry | None = None,
+    pop_verifier: PopUidAdapter | None = None,
+    pop_subject_id: str | None = None,
 ) -> ExecutionGateEvaluation:
     """Run contract building, risk scoring, synthetic RDE, and policy.
 
@@ -144,6 +226,10 @@ def evaluate_before_execution(
     :class:`~openayane_rde.policy.execution_rules.ExecutionPolicyConfig` run before
     risk scoring. When ``audit_log_path`` is set, appends ``execution_gate_evaluated``
     and sets :attr:`~openayane_rde.core.models.ExecutionGateDecision.audit_event_id`.
+
+    Optional Phase 4: ``institution_registry`` applies :class:`InstitutionRule` escalation
+    after the execution policy path; ``pop_verifier`` / ``pop_subject_id`` can force halt
+    when :class:`RDEResult` has ``risk_level == "critical"`` and PoP fails.
 
     Returns an :class:`ExecutionGateEvaluation` bundling the gate decision and
     :class:`ExecutionTaskContract` for :func:`enforce_execution_decision`.
@@ -210,6 +296,13 @@ def evaluate_before_execution(
         rde_result=rde,
         relation_context=rc,
         policy_adjustment_notes=bridge_notes,
+    )
+    gate = _apply_institution_to_execution_gate(
+        contract,
+        gate,
+        institution_registry=institution_registry,
+        pop_verifier=pop_verifier,
+        pop_subject_id=pop_subject_id,
     )
     return _evaluation_with_audit(
         ExecutionGateEvaluation(decision=gate, contract=contract),

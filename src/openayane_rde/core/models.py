@@ -705,6 +705,8 @@ class ExecutionGateDecision(BaseModel):
     rollback_plan_required: bool = False
     review_request_id: str | None = None
     audit_event_id: str | None = None
+    institution_rule_id: str | None = None
+    institutional_rationale: str | None = None
     policy_adjustment_notes: list[str] = Field(
         default_factory=list,
         description="Relation-history escalations aligned with Phase 1 policy bridge rules.",
