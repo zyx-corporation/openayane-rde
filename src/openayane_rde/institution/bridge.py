@@ -5,16 +5,12 @@ Rule-based and inspectable; no LLM calls. See ``docs/40_openayane_rde_phase4_ins
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import datetime
 
 from openayane_rde.core.ids import new_id
 from openayane_rde.core.models import (
     EvidenceBasis,
-    ExecutionActionType,
     ExecutionGateEvaluation,
-    ExternalSideEffectKind,
-    RiskLevel,
     ToolExecutionResult,
 )
 from openayane_rde.core.time import now_utc
@@ -25,18 +21,12 @@ from openayane_rde.institution.models import (
     InstitutionRule,
     ReviewerAuthority,
 )
-from openayane_rde.institution.policy import first_matching_rule, reviewer_covers_action
-
-
-@dataclass(frozen=True, slots=True)
-class HandoffDecisionInput:
-    """Phase 3–derived facts for rule matching (not stored on ``EvidenceHandoff``)."""
-
-    action_type: ExecutionActionType
-    side_effect: ExternalSideEffectKind
-    risk_level: RiskLevel
-    """True = irreversible, False = reversible, None = unknown (conservative)."""
-    reversibility: bool | None = None
+from openayane_rde.institution.policy import (
+    HandoffDecisionInput,
+    check_irreversible_paths,
+    check_structural_cover_escalation,
+    first_matching_rule,
+)
 
 
 class DeterministicInstitutionBridge:
@@ -139,48 +129,39 @@ class DeterministicInstitutionBridge:
                 rationale="Human review decision referenced but no ReviewerAuthority provided.",
             )
 
-        if inp.reversibility is True:
-            if not rule.allows_irreversible_action:
-                return self._decision(
-                    handoff,
-                    decision="halt_institutionally",
-                    rule_id=rule.rule_id,
-                    authority_id=self._primary_authority_id(reviewer_authority),
-                    rationale="Matched rule does not allow irreversible acceptance.",
-                    risk_accepted=False,
-                    irreversible_accepted=False,
-                )
-            if reviewer_authority is None:
-                return self._decision(
-                    handoff,
-                    decision="require_higher_authority",
-                    rule_id=rule.rule_id,
-                    authority_id=None,
-                    rationale="Irreversible consequence requires ReviewerAuthority.",
-                )
-            if not reviewer_authority.can_approve_irreversible:
-                return self._decision(
-                    handoff,
-                    decision="require_higher_authority",
-                    rule_id=rule.rule_id,
-                    authority_id=self._primary_authority_id(reviewer_authority),
-                    rationale="Reviewer cannot approve irreversible actions.",
-                )
+        early = check_irreversible_paths(rule, inp, reviewer_authority)
+        if early == "halt_institutionally":
+            return self._decision(
+                handoff,
+                decision="halt_institutionally",
+                rule_id=rule.rule_id,
+                authority_id=self._primary_authority_id(reviewer_authority),
+                rationale="Matched rule does not allow irreversible acceptance.",
+                risk_accepted=False,
+                irreversible_accepted=False,
+            )
+        if early == "require_higher_authority":
+            return self._decision(
+                handoff,
+                decision="require_higher_authority",
+                rule_id=rule.rule_id,
+                authority_id=self._primary_authority_id(reviewer_authority),
+                rationale=(
+                    "Irreversible consequence requires ReviewerAuthority."
+                    if reviewer_authority is None
+                    else "Reviewer cannot approve irreversible actions."
+                ),
+            )
 
-        if reviewer_authority is not None:
-            if not reviewer_covers_action(
-                reviewer_authority,
-                action_type=inp.action_type,
-                side_effect=inp.side_effect,
-                action_risk=inp.risk_level,
-            ):
-                return self._decision(
-                    handoff,
-                    decision="require_higher_authority",
-                    rule_id=rule.rule_id,
-                    authority_id=self._primary_authority_id(reviewer_authority),
-                    rationale="ReviewerAuthority does not cover this action or risk.",
-                )
+        cov = check_structural_cover_escalation(reviewer_authority, inp)
+        if cov == "require_higher_authority":
+            return self._decision(
+                handoff,
+                decision="require_higher_authority",
+                rule_id=rule.rule_id,
+                authority_id=self._primary_authority_id(reviewer_authority),
+                rationale="ReviewerAuthority does not cover this action or risk.",
+            )
 
         return self._decision(
             handoff,
@@ -223,3 +204,8 @@ class DeterministicInstitutionBridge:
             audit_event_id=self._primary_audit_link(handoff),
             created_at=now_utc(),
         )
+
+
+# ``HandoffDecisionInput`` is defined in ``policy``; kept in namespace for
+# ``from openayane_rde.institution.bridge import HandoffDecisionInput``.
+__all__ = ["DeterministicInstitutionBridge", "HandoffDecisionInput"]
