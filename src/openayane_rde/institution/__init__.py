@@ -3,6 +3,7 @@
 from openayane_rde.institution.models import (
     AuthorityRef,
     EvidenceHandoff,
+    HaltProvenance,
     InstitutionalDecision,
     InstitutionRule,
     ReviewerAuthority,
@@ -11,6 +12,7 @@ from openayane_rde.institution.models import (
 __all__ = [
     "AuthorityRef",
     "EvidenceHandoff",
+    "HaltProvenance",
     "InstitutionalDecision",
     "InstitutionRule",
     "ReviewerAuthority",

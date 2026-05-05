@@ -61,7 +61,7 @@ Matching uses rule-based substring checks plus a small built-in **synonym map** 
 
 ## Phase 4 institution models (skeleton)
 
-`openayane_rde.institution` defines **typed skeletons** for `InstitutionRule`, `AuthorityRef`, `ReviewerAuthority`, `EvidenceHandoff`, and `InstitutionalDecision`, aligned with `docs/40_openayane_rde_phase4_institution_bridge_spec.md`. They establish boundaries for the Institution Bridge only — **not** production authority infrastructure (no PoP-UID, cryptographic proof, or external IdP). Bridge records reference Phase 3 evidence by ID; they are **not** execution results or proofs of authority.
+`openayane_rde.institution` defines **typed skeletons** for `InstitutionRule`, `AuthorityRef`, `ReviewerAuthority`, `EvidenceHandoff`, `InstitutionalDecision`, and `HaltProvenance`, aligned with `docs/40_openayane_rde_phase4_institution_bridge_spec.md`. They establish boundaries for the Institution Bridge only — **not** production authority infrastructure (no PoP-UID, cryptographic proof, or external IdP). Bridge records reference Phase 3 evidence by ID; they are **not** execution results or proofs of authority. `HaltProvenance` keeps policy halt and RDE halt distinguishable in serialized audit payloads.
 
 ## Licensing
 
