@@ -7,12 +7,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import sqlite3
 import sys
 from pathlib import Path
 from typing import Callable, Literal, cast
 
 from pydantic import ValidationError
 
+from openayane_rde.cli.inspect_ops import summarize_audit_jsonl, summarize_relation_store
 from openayane_rde.config import load_openayane_config, normalize_config_paths
 from openayane_rde.core.models import GeneratorOutput, ModelInfo, SelfReport, TaskContract
 from openayane_rde.runtime._flow import run_phase1_evaluation, run_structural_diff
@@ -152,6 +154,92 @@ def cmd_config_validate(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_audit_inspect(args: argparse.Namespace) -> int:
+    log_path: Path | None = Path(args.log) if args.log else None
+    if args.config:
+        cfg_path = Path(args.config)
+        if not cfg_path.is_file():
+            return _die(f"Not a file: {cfg_path}", 2)
+        try:
+            cfg = normalize_config_paths(load_openayane_config(cfg_path), cfg_path)
+        except ValueError as exc:
+            return _die(str(exc), 2)
+        except ValidationError as exc:
+            if args.json:
+                err_payload = {"ok": False, "errors": exc.errors(include_url=False)}
+                print(json.dumps(err_payload, ensure_ascii=False))
+            else:
+                print(str(exc), file=sys.stderr)
+            return 1
+        if log_path is None:
+            log_path = Path(cfg.audit.path)
+    if log_path is None:
+        return _die("audit inspect: provide --log or --config", 2)
+    if not log_path.is_file():
+        return _die(f"Not a file: {log_path}", 2)
+
+    summary = summarize_audit_jsonl(log_path)
+    if args.json:
+        print(json.dumps(summary, ensure_ascii=False))
+    else:
+        print(f"Audit log: {summary['log_path']}")
+        print(f"Valid events: {summary['valid_events']}, malformed lines: {summary['malformed_lines']}")
+        if summary["duplicate_event_ids"]:
+            print(f"Duplicate event_id: {', '.join(summary['duplicate_event_ids'])}")
+        if summary["actions"]:
+            print("Actions:", json.dumps(summary["actions"], ensure_ascii=False))
+        if summary["malformed_lines"] and summary["malformed"]:
+            first = summary["malformed"][0]
+            print(f"First malformed line {first['line']}: {first['error']}", file=sys.stderr)
+    return 1 if summary["malformed_lines"] else 0
+
+
+def cmd_relation_inspect(args: argparse.Namespace) -> int:
+    backend: str | None = args.backend
+    store_path: Path | None = Path(args.path) if args.path else None
+    if args.config:
+        cfg_path = Path(args.config)
+        if not cfg_path.is_file():
+            return _die(f"Not a file: {cfg_path}", 2)
+        try:
+            cfg = normalize_config_paths(load_openayane_config(cfg_path), cfg_path)
+        except ValueError as exc:
+            return _die(str(exc), 2)
+        except ValidationError as exc:
+            if args.json:
+                err_payload = {"ok": False, "errors": exc.errors(include_url=False)}
+                print(json.dumps(err_payload, ensure_ascii=False))
+            else:
+                print(str(exc), file=sys.stderr)
+            return 1
+        if backend is None:
+            backend = cfg.relation_store.backend
+        if store_path is None:
+            store_path = Path(cfg.relation_store.path)
+    if backend is None or store_path is None:
+        return _die("relation inspect: provide --config or both --backend and --path", 2)
+
+    try:
+        summary = summarize_relation_store(backend, store_path)
+    except (sqlite3.DatabaseError, sqlite3.OperationalError, OSError, ValueError) as exc:
+        return _die(str(exc), 2)
+
+    if args.json:
+        print(json.dumps(summary, ensure_ascii=False))
+    else:
+        print(f"Relation backend: {summary['backend']} ({summary['path']})")
+        print(f"Records: {summary['record_count']}")
+        for rec in summary["records"][:10]:
+            print(
+                f"  {rec['subject_id']} -> {rec['object_id']}: "
+                f"trust={rec['trust']:.3f} stability={rec['stability']:.3f} "
+                f"affinity={rec['context_affinity']:.3f}"
+            )
+        if summary["record_count"] > 10:
+            print(f"  ... and {summary['record_count'] - 10} more (use --json)")
+    return 0
+
+
 def cmd_stub(name: str, args: argparse.Namespace) -> int:
     if args.json:
         print(json.dumps({"command": name, "status": "not_implemented"}, ensure_ascii=False))
@@ -229,15 +317,34 @@ def build_parser() -> argparse.ArgumentParser:
 
     pa = sub.add_parser("audit", help="Audit log commands.")
     pa_sub = pa.add_subparsers(dest="_audit_sub", required=True)
-    pa_insp = pa_sub.add_parser("inspect", help="Inspect audit JSONL (stub).")
+    pa_insp = pa_sub.add_parser(
+        "inspect",
+        help="Summarize audit JSONL (valid rows, malformed lines, duplicate IDs).",
+    )
+    pa_insp.add_argument("--log", default=None, help="Path to audit JSONL.")
+    pa_insp.add_argument(
+        "--config",
+        default=None,
+        help="openayane.toml; uses normalized [audit].path when --log is omitted.",
+    )
     pa_insp.add_argument("--json", action="store_true")
-    pa_insp.set_defaults(_handler=_stub_handler("audit inspect"))
+    pa_insp.set_defaults(_handler=cmd_audit_inspect)
 
     pr = sub.add_parser("relation", help="Relation store commands.")
     pr_sub = pr.add_subparsers(dest="_relation_sub", required=True)
-    pr_insp = pr_sub.add_parser("inspect", help="Inspect relation store (stub).")
+    pr_insp = pr_sub.add_parser(
+        "inspect",
+        help="Summarize relation store (JSON file or SQLite DB, read-only).",
+    )
+    pr_insp.add_argument(
+        "--config",
+        default=None,
+        help="openayane.toml; supplies backend and path when flags omitted.",
+    )
+    pr_insp.add_argument("--backend", choices=("json", "sqlite"), default=None)
+    pr_insp.add_argument("--path", default=None, help="Relation store path (file).")
     pr_insp.add_argument("--json", action="store_true")
-    pr_insp.set_defaults(_handler=_stub_handler("relation inspect"))
+    pr_insp.set_defaults(_handler=cmd_relation_inspect)
 
     pp = sub.add_parser("policy", help="Policy commands.")
     pp_sub = pp.add_subparsers(dest="_policy_sub", required=True)
