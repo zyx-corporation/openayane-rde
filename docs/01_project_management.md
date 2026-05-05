@@ -98,6 +98,8 @@ Suggested filter:
 Phase:Phase 3
 ```
 
+Suggested layout: Board (e.g. the **Phase 3 Execution Governance** view). The filter may be written as `Phase:\"Phase 3\"` in the Project UI/API.
+
 Recommended components:
 
 - Human Review
@@ -118,7 +120,21 @@ Suggested filter:
 Component:Docs
 ```
 
-### 4.7 Phase 5 Operational Hardening
+### 4.7 Phase 4 Institution Bridge
+
+Purpose: track the Phase 4 institutional boundary (Institution Bridge), evidence handoff, and authority / irreversibility models.
+
+Specification: `docs/40_openayane_rde_phase4_institution_bridge_spec.md`
+
+Suggested filter:
+
+```text
+Phase:"Phase 4"
+```
+
+Suggested layout: Board (**Phase 4 — Institution Bridge** on the org project).
+
+### 4.8 Phase 5 Operational Hardening
 
 Purpose: track the operational layer (CLI, configuration, service/API skeleton, adapters, regression, performance, release policy).
 
@@ -127,10 +143,12 @@ Specification: `docs/50_openayane_rde_phase5_operational_hardening_spec.md`
 Suggested filter:
 
 ```text
-Phase:Phase 5
+Phase:"Phase 5"
 ```
 
 Suggested practice: align each issue’s Component and labels with its dominant workload; adapters and API work should explicitly set Evidence Required and Risk.
+
+Suggested layout: Board (**Phase 5 — Operational Hardening** on the org project).
 
 ## 5. Recommended built-in workflows
 

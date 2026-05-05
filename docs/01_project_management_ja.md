@@ -104,6 +104,8 @@ Evidence Required:human review OR Risk:High OR Risk:Critical OR RDE Category:sus
 Phase:Phase 3
 ```
 
+推奨 layout: Board（例: **Phase 3 Execution Governance** ビュー）。Project 上の filter では `Phase:\"Phase 3\"` 形式でもよい。
+
 推奨 components:
 
 - Human Review
@@ -124,7 +126,21 @@ Phase:Phase 3
 Component:Docs
 ```
 
-### 4.7 Phase 5 Operational Hardening
+### 4.7 Phase 4 Institution Bridge
+
+目的: Phase 4 の制度境界（Institution Bridge）、証拠ハンドオフ、権限・不可逆性のモデルを追跡する。
+
+参照仕様: `docs/40_openayane_rde_phase4_institution_bridge_spec.md`
+
+推奨 filter:
+
+```text
+Phase:"Phase 4"
+```
+
+推奨 layout: Board（組織 Project では **Phase 4 — Institution Bridge** ビュー）。
+
+### 4.8 Phase 5 Operational Hardening
 
 目的: 運用レイヤー（CLI、設定、サービス/API 骨格、アダプタ、回帰検証、パフォーマンス、リリース方針）を追跡する。
 
@@ -133,13 +149,15 @@ Component:Docs
 推奨 filter:
 
 ```text
-Phase:Phase 5
+Phase:"Phase 5"
 ```
 
 推奨 components（Project の Component と Issue 側ラベルを揃える）:
 
 - Docs / CLI / CI / Release にまたがる作業があるため、`Component` は Issue 単位で最も支配的な項を選択する。
 - アダプタや API 関連は実行制御との境界を明示するために `Evidence Required` と `Risk` を必ずセットする。
+
+推奨 layout: Board（組織 Project では **Phase 5 — Operational Hardening** ビュー）。
 
 ## 5. Recommended built-in workflows
 
