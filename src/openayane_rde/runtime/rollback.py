@@ -1,4 +1,20 @@
-"""Rollback manager — file snapshots and validation (Phase 3)."""
+"""Rollback manager — file snapshots and validation (Phase 3).
+
+Recovery playbook (operator-facing)
+-----------------------------------
+1. Confirm :class:`~openayane_rde.core.models.ExecutionTaskContract` uses
+   ``rollback_strategy="file_snapshot"`` for filesystem writes you may need to revert.
+2. Before mutating files, call :meth:`RollbackManager.create_plan` to capture snapshots
+   under ``<workspace>/.relation_store/rollback/snapshots/``.
+3. After a failed or high-risk run (see :func:`should_offer_rollback_for_execution`),
+   call :meth:`RollbackManager.execute_rollback` or :meth:`RollbackManager.execute_rollback_with_audit`
+   with the same plan id chain used for the execution.
+4. If the plan reports ``manual_required`` / ``not_possible``, follow ``manual_steps``
+   in :class:`~openayane_rde.core.models.RollbackPlan` and do not assume automated restore.
+5. Verify restored paths and append audit evidence when ``audit_log_path`` is used.
+
+This runtime does **not** guarantee transactional reversibility across arbitrary tools.
+"""
 
 from __future__ import annotations
 
@@ -11,8 +27,23 @@ from openayane_rde.core.models import (
     RollbackPlan,
     RollbackResult,
     RollbackStrategyKind,
+    ToolExecutionResult,
 )
 from openayane_rde.core.time import now_utc
+
+
+def should_offer_rollback_for_execution(
+    execution_result: ToolExecutionResult,
+    *,
+    gate_risk_level: str | None = None,
+) -> bool:
+    """Return True when operators should be prompted to consider rollback."""
+
+    if execution_result.status in ("failed", "timed_out"):
+        return True
+    if gate_risk_level in ("high", "critical"):
+        return True
+    return False
 
 
 def _under_workspace(path: Path, root: Path) -> bool:
@@ -135,3 +166,22 @@ class RollbackManager:
                 error_message=str(exc),
                 completed_at=completed_at,
             )
+
+    def execute_rollback_with_audit(
+        self,
+        plan: RollbackPlan,
+        *,
+        audit_log_path: str | Path | None = None,
+        trigger_reason: str = "",
+    ) -> RollbackResult:
+        """Run :meth:`execute_rollback` and optionally append ``rollback_completed`` / ``rollback_failed`` audit rows."""
+
+        result = self.execute_rollback(plan)
+        if audit_log_path is not None:
+            from openayane_rde.audit.log import append_audit_event, audit_event_rollback_executed
+
+            append_audit_event(
+                audit_log_path,
+                audit_event_rollback_executed(plan, result, trigger_reason=trigger_reason),
+            )
+        return result

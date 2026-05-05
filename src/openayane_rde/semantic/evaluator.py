@@ -17,7 +17,12 @@ from openayane_rde.core.models import (
 
 @runtime_checkable
 class SemanticEvaluator(Protocol):
-    """Pluggable semantic assist (not the sole RDE authority)."""
+    """Pluggable semantic assist (not the sole RDE authority).
+
+    Integration: use :func:`openayane_rde.semantic.integration.optional_evaluate_execution_intent`
+    and :func:`openayane_rde.semantic.integration.optional_evaluate_post_execution` so that
+    omitting an evaluator preserves baseline structural / gate flows unchanged.
+    """
 
     def evaluate_execution_intent(
         self,

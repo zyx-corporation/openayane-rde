@@ -8,10 +8,13 @@ from typing import Literal
 
 from openayane_rde.core.errors import AuditError
 from openayane_rde.core.models import (
+    AuditActionKind,
     AuditEvent,
     ExecutionGateDecision,
     ReviewDecision,
     ReviewRequest,
+    RollbackPlan,
+    RollbackResult,
     ToolExecutionResult,
 )
 
@@ -150,6 +153,34 @@ def audit_event_human_review_decided(
             "review_request_id": decision.review_request_id,
             "decision": decision.decision,
             "reviewer_id": decision.reviewer_id,
+        },
+    )
+
+
+def audit_event_rollback_executed(
+    plan: RollbackPlan,
+    result: RollbackResult,
+    *,
+    trigger_reason: str = "",
+) -> AuditEvent:
+    """Audit row after :meth:`~openayane_rde.runtime.rollback.RollbackManager.execute_rollback`."""
+
+    action: AuditActionKind = (
+        "rollback_completed" if result.status == "completed" else "rollback_failed"
+    )
+    expl = trigger_reason.strip() or f"Rollback finished with status {result.status}."
+    return AuditEvent(
+        actor="runtime",
+        action=action,
+        task_contract_id=plan.contract_id,
+        explanation=expl,
+        payload={
+            "rollback_plan_id": plan.rollback_plan_id,
+            "rollback_result_id": result.rollback_result_id,
+            "rollback_result_status": result.status,
+            "strategy": plan.strategy,
+            "restored_resources": result.restored_resources,
+            "error_message": result.error_message,
         },
     )
 
