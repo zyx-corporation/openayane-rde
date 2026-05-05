@@ -15,6 +15,10 @@ from typing import Callable, Literal, cast
 from pydantic import ValidationError
 
 from openayane_rde.cli.inspect_ops import summarize_audit_jsonl, summarize_relation_store
+from openayane_rde.cli.regression import (
+    run_golden_pytest,
+    validate_repo_schemas_and_fixtures,
+)
 from openayane_rde.config import load_openayane_config, normalize_config_paths
 from openayane_rde.core.models import GeneratorOutput, ModelInfo, SelfReport, TaskContract
 from openayane_rde.runtime._flow import run_phase1_evaluation, run_structural_diff
@@ -240,6 +244,30 @@ def cmd_relation_inspect(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_schema_validate(args: argparse.Namespace) -> int:
+    root = Path(args.repo_root)
+    errs = validate_repo_schemas_and_fixtures(root)
+    if args.json:
+        print(json.dumps({"ok": not errs, "errors": errs}, ensure_ascii=False))
+    else:
+        for err in errs:
+            print(err, file=sys.stderr)
+        if not errs:
+            print(f"OK: schemas and schema_fixtures under {root.resolve()}")
+    return 1 if errs else 0
+
+
+def cmd_golden_run(args: argparse.Namespace) -> int:
+    root = Path(args.repo_root)
+    extra: list[str] = list(args.pytest_args or [])
+    if extra and extra[0] == "--":
+        extra = extra[1:]
+    code = run_golden_pytest(root, extra_args=extra or None)
+    if args.json:
+        print(json.dumps({"exit_code": code, "repo_root": str(root.resolve())}, ensure_ascii=False))
+    return code
+
+
 def cmd_stub(name: str, args: argparse.Namespace) -> int:
     if args.json:
         print(json.dumps({"command": name, "status": "not_implemented"}, ensure_ascii=False))
@@ -360,15 +388,36 @@ def build_parser() -> argparse.ArgumentParser:
 
     psch = sub.add_parser("schema", help="Schema commands.")
     psch_sub = psch.add_subparsers(dest="_schema_sub", required=True)
-    psch_val = psch_sub.add_parser("validate", help="Validate schemas and fixtures (stub).")
+    psch_val = psch_sub.add_parser(
+        "validate",
+        help="Validate JSON Schema files and tests/schema_fixtures/*.valid.json.",
+    )
+    psch_val.add_argument(
+        "--repo-root",
+        default=".",
+        help="Repository root containing schemas/ and tests/schema_fixtures/.",
+    )
     psch_val.add_argument("--json", action="store_true")
-    psch_val.set_defaults(_handler=_stub_handler("schema validate"))
+    psch_val.set_defaults(_handler=cmd_schema_validate)
 
     pg = sub.add_parser("golden", help="Golden regression commands.")
     pg_sub = pg.add_subparsers(dest="_golden_sub", required=True)
-    pg_run = pg_sub.add_parser("run", help="Run golden fixtures (stub).")
+    pg_run = pg_sub.add_parser(
+        "run",
+        help="Run golden tests, Phase 4 institution tests, and a policy halt case.",
+    )
+    pg_run.add_argument(
+        "--repo-root",
+        default=".",
+        help="Repository root (pytest cwd).",
+    )
+    pg_run.add_argument(
+        "pytest_args",
+        nargs=argparse.REMAINDER,
+        help="Extra arguments forwarded to pytest (place after --).",
+    )
     pg_run.add_argument("--json", action="store_true")
-    pg_run.set_defaults(_handler=_stub_handler("golden run"))
+    pg_run.set_defaults(_handler=cmd_golden_run)
 
     pperf = sub.add_parser("perf", help="Performance harness commands.")
     pperf_sub = pperf.add_subparsers(dest="_perf_sub", required=True)

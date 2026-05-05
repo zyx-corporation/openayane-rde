@@ -133,6 +133,16 @@ def test_config_validate_cli_missing_file(tmp_path: Path) -> None:
     assert main(["config", "validate", "--config", str(missing)]) == 2
 
 
+def test_schema_validate_cli_repo() -> None:
+    repo = Path(__file__).resolve().parents[2]
+    assert main(["schema", "validate", "--repo-root", str(repo)]) == 0
+
+
+def test_golden_run_cli_smoke() -> None:
+    repo = Path(__file__).resolve().parents[2]
+    assert main(["golden", "run", "--repo-root", str(repo)]) == 0
+
+
 def test_audit_inspect_cli_ok(tmp_path: Path) -> None:
     log = tmp_path / "a.jsonl"
     append_event(log, make_event())

@@ -36,6 +36,8 @@ lint:
 	.venv/bin/mypy src
 
 # Same order as CI: Tests → Ruff → Mypy
+# Optional regression (matches P5-7): `.venv/bin/openayane-rde schema validate --repo-root .`
+#   and `golden run --repo-root .` after `pip install -e '.[dev,markdown]'`.
 ci: test lint
 
 all: paper
