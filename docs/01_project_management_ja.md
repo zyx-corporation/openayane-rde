@@ -293,31 +293,31 @@ Phase 4 の各 Issue では、原則として次のブランチ名を用いる�
 
 ## 13. Phase 5: Issue–ブランチ対応と推奨実装順
 
-GitHub Issues（仕様 `docs/50_openayane_rde_phase5_operational_hardening_spec.md` §16 と対応）。
+**現行の実装優先度は Phase 5** である（Phase 4 のマイルストーンは完了済み）。GitHub Issues [#44](https://github.com/zyx-corporation/openayane-rde/issues/44) 〜 [#54](https://github.com/zyx-corporation/openayane-rde/issues/54) はいずれも着手可能。Issue 一覧は仕様 `docs/50_openayane_rde_phase5_operational_hardening_spec.md` §16 と対応。**実行順は §17 を正**とする（**P5-3 / #46 のローカル API は最後**。番号 P5-3 と実装順がずれるのは意図的）。
 
-| Issue | ブランチ名 |
+| Issue | 推奨ブランチ名（§17） |
 |---|---|
-| [#44](https://github.com/zyx-corporation/openayane-rde/issues/44) | `phase5/issue-44-cli-foundation-skeletons` |
-| [#45](https://github.com/zyx-corporation/openayane-rde/issues/45) | `phase5/issue-45-openayane-toml-config` |
-| [#46](https://github.com/zyx-corporation/openayane-rde/issues/46) | `phase5/issue-46-local-service-api-skeleton` |
-| [#47](https://github.com/zyx-corporation/openayane-rde/issues/47) | `phase5/issue-47-adapter-protocol-fs-mvp` |
-| [#48](https://github.com/zyx-corporation/openayane-rde/issues/48) | `phase5/issue-48-github-pr-adapter-mvp` |
-| [#49](https://github.com/zyx-corporation/openayane-rde/issues/49) | `phase5/issue-49-audit-relation-inspect-commands` |
-| [#50](https://github.com/zyx-corporation/openayane-rde/issues/50) | `phase5/issue-50-schema-fixture-golden-regression-cmds` |
-| [#53](https://github.com/zyx-corporation/openayane-rde/issues/53) | `phase5/issue-53-performance-measurement-harness` |
-| [#54](https://github.com/zyx-corporation/openayane-rde/issues/54) | `phase5/issue-54-release-compatibility-policy-docs` |
+| [#44](https://github.com/zyx-corporation/openayane-rde/issues/44) | `phase5/issue-44-cli-foundation` |
+| [#45](https://github.com/zyx-corporation/openayane-rde/issues/45) | `phase5/issue-45-config-loader` |
+| [#46](https://github.com/zyx-corporation/openayane-rde/issues/46) | `phase5/issue-46-local-api-skeleton` |
+| [#47](https://github.com/zyx-corporation/openayane-rde/issues/47) | `phase5/issue-47-adapter-filesystem` |
+| [#48](https://github.com/zyx-corporation/openayane-rde/issues/48) | `phase5/issue-48-github-pr-adapter` |
+| [#49](https://github.com/zyx-corporation/openayane-rde/issues/49) | `phase5/issue-49-audit-relation-inspect` |
+| [#50](https://github.com/zyx-corporation/openayane-rde/issues/50) | `phase5/issue-50-schema-golden-regression` |
+| [#53](https://github.com/zyx-corporation/openayane-rde/issues/53) | `phase5/issue-53-performance-harness` |
+| [#54](https://github.com/zyx-corporation/openayane-rde/issues/54) | `phase5/issue-54-release-compat-policy` |
 
-推奨実装順（仕様 §17 / §18.6 の運用順に沿った一つの並び）:
+推奨実装順（`docs/50` §17 の実行順と一致）:
 
 1. #44 CLI foundation
 2. #45 Configuration loader（`openayane.toml`）
-3. #46 Local-only service/API skeleton
+3. #49 Audit / relation inspect コマンド
 4. #47 Adapter protocol + filesystem MVP
 5. #48 GitHub PR review adapter MVP
-6. #49 Audit/relation inspect コマンド
-7. #50 Schema/fixture/golden regression コマンド
-8. #53 Performance measurement harness
-9. #54 Release and compatibility policy docs
+6. #50 Schema / fixture / golden regression コマンド
+7. #53 Performance measurement harness
+8. #54 Release and compatibility policy docs
+9. #46 Local-only service/API skeleton（最後）
 
 GitHub Projects（推奨名「OpenAyane RDE Implementation」）へ転記するときは、上記 Issues をドラッグ追加し、フィールド **`Phase = Phase 5`** をセットする。**自動追加ワークフロー**（§5）は既存 Issues には遡って効かないため、手動での一度の取り込みが必要となる。
 
