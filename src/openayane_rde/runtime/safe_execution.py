@@ -1,12 +1,34 @@
-"""Safe Execution Runtime — bounded file/subprocess execution (Phase 3)."""
+"""Safe Execution Runtime — bounded file/subprocess execution (Phase 3).
+
+Operational boundaries (application sandbox, not OS-level isolation)
+---------------------------------------------------------------------
+* Paths are confined to ``workspace_root`` using ``resolve()`` + prefix checks; symlink
+  escapes that resolve outside the workspace are rejected. This is not TOCTOU-safe.
+* Network and ``external_api`` actions are not implemented here; the contract must allow
+  them or execution returns ``blocked``.
+* Subprocesses run only when ``allow_subprocess_execution`` is true and the argv matches
+  ``subprocess_allowlist``. Dangerous argv patterns are rejected even if allowlisted.
+* ``contract.max_runtime_ms`` is enforced for **subprocess** execution via
+  ``Popen.communicate`` deadlines (terminate + reap on timeout). It does **not** bound
+  wall time for in-process read/write/delete simulation (no cancellation of disk I/O).
+* Optional ``cancellation_event`` supports cooperative cancellation: checked before
+  filesystem side effects and polled during subprocess completion. In-flight subprocess
+  cancellation kills the child process; there is no CPU/memory cgroup enforcement.
+
+Failure modes are conservative: blocked paths return ``blocked``; timeouts return
+``timed_out``; cancellation returns ``failed`` with ``error_message="cancelled"``.
+"""
 
 from __future__ import annotations
 
 import re
 import shlex
 import subprocess
+import threading
 import time
+from datetime import datetime
 from pathlib import Path
+from typing import Any, Literal
 
 from openayane_rde.core.models import (
     ExecutionTaskContract,
@@ -25,6 +47,25 @@ def _is_under_root(path: Path, root: Path) -> bool:
         return False
 
 
+def _cancelled_execution_result(
+    contract: ExecutionTaskContract,
+    tool_call: ToolCallRequest,
+    *,
+    started: datetime,
+    rollback_plan: RollbackPlan | None,
+) -> ToolExecutionResult:
+    return ToolExecutionResult(
+        contract_id=contract.contract_id,
+        tool_call_id=tool_call.tool_call_id,
+        status="failed",
+        stderr="Execution cancelled before completion.",
+        started_at=started,
+        completed_at=now_utc(),
+        error_message="cancelled",
+        rollback_plan_id=rollback_plan.rollback_plan_id if rollback_plan else None,
+    )
+
+
 def _truncate(s: str, max_bytes: int | None) -> str:
     if max_bytes is None or max_bytes <= 0:
         return s
@@ -35,7 +76,11 @@ def _truncate(s: str, max_bytes: int | None) -> str:
 
 
 class SafeExecutionRuntime:
-    """Application-level safe execution (not a full OS sandbox)."""
+    """Application-level safe execution (not a full OS sandbox).
+
+    Use ``cancellation_event`` for cooperative shutdown; subprocess timeouts use
+    ``ExecutionTaskContract.max_runtime_ms`` (see module docstring).
+    """
 
     def __init__(
         self,
@@ -55,12 +100,17 @@ class SafeExecutionRuntime:
         rollback_plan: RollbackPlan | None = None,
         *,
         dry_run: bool = False,
+        cancellation_event: threading.Event | None = None,
     ) -> ToolExecutionResult:
         """Execute or simulate a tool call within workspace and policy limits."""
 
         started = now_utc()
-        max_ms = contract.max_runtime_ms
         max_out = contract.max_output_bytes or 64_000
+
+        if cancellation_event is not None and cancellation_event.is_set():
+            return _cancelled_execution_result(
+                contract, tool_call, started=started, rollback_plan=rollback_plan
+            )
 
         for p in contract.protected_resources:
             for t in contract.target_resources:
@@ -88,7 +138,13 @@ class SafeExecutionRuntime:
             )
 
         if contract.action_type == "execute":
-            return self._execute_subprocess(contract, tool_call, rollback_plan, dry_run=dry_run)
+            return self._execute_subprocess(
+                contract,
+                tool_call,
+                rollback_plan,
+                dry_run=dry_run,
+                cancellation_event=cancellation_event,
+            )
 
         # File-oriented simulation for read/write/delete
         target = contract.target_resources[0] if contract.target_resources else ""
@@ -104,10 +160,11 @@ class SafeExecutionRuntime:
                 error_message="path_outside_workspace",
             )
 
-        if max_ms is not None:
-            time.sleep(min(max_ms / 1000.0, 0.001))
-
         if contract.action_type == "read":
+            if cancellation_event is not None and cancellation_event.is_set():
+                return _cancelled_execution_result(
+                    contract, tool_call, started=started, rollback_plan=rollback_plan
+                )
             if not path.is_file():
                 return ToolExecutionResult(
                     contract_id=contract.contract_id,
@@ -130,6 +187,10 @@ class SafeExecutionRuntime:
             )
 
         if contract.action_type == "write":
+            if cancellation_event is not None and cancellation_event.is_set():
+                return _cancelled_execution_result(
+                    contract, tool_call, started=started, rollback_plan=rollback_plan
+                )
             if dry_run:
                 return ToolExecutionResult(
                     contract_id=contract.contract_id,
@@ -157,6 +218,10 @@ class SafeExecutionRuntime:
             )
 
         if contract.action_type == "delete":
+            if cancellation_event is not None and cancellation_event.is_set():
+                return _cancelled_execution_result(
+                    contract, tool_call, started=started, rollback_plan=rollback_plan
+                )
             if dry_run:
                 return ToolExecutionResult(
                     contract_id=contract.contract_id,
@@ -187,6 +252,45 @@ class SafeExecutionRuntime:
             completed_at=now_utc(),
         )
 
+    def _communicate_subprocess(
+        self,
+        proc: subprocess.Popen[Any],
+        *,
+        deadline_s: float,
+        cancellation_event: threading.Event | None,
+        max_out: int,
+    ) -> tuple[str, str, Literal["ok", "timeout", "cancelled"]]:
+        end = time.monotonic() + deadline_s
+        while True:
+            if cancellation_event is not None and cancellation_event.is_set():
+                if proc.poll() is None:
+                    proc.kill()
+                out, err = proc.communicate(timeout=30)
+                return (
+                    _truncate(out or "", max_out),
+                    _truncate(err or "", max_out),
+                    "cancelled",
+                )
+            remaining = end - time.monotonic()
+            if remaining <= 0:
+                if proc.poll() is None:
+                    proc.kill()
+                out, err = proc.communicate(timeout=30)
+                return (
+                    _truncate(out or "", max_out),
+                    _truncate(err or "", max_out),
+                    "timeout",
+                )
+            try:
+                out, err = proc.communicate(timeout=min(0.2, max(0.001, remaining)))
+                return (
+                    _truncate(out or "", max_out),
+                    _truncate(err or "", max_out),
+                    "ok",
+                )
+            except subprocess.TimeoutExpired:
+                continue
+
     def _execute_subprocess(
         self,
         contract: ExecutionTaskContract,
@@ -194,10 +298,16 @@ class SafeExecutionRuntime:
         rollback_plan: RollbackPlan | None,
         *,
         dry_run: bool,
+        cancellation_event: threading.Event | None,
     ) -> ToolExecutionResult:
         started = now_utc()
         max_out = contract.max_output_bytes or 64_000
         command_raw = str(tool_call.arguments.get("command") or tool_call.arguments.get("cmd") or "")
+
+        if cancellation_event is not None and cancellation_event.is_set():
+            return _cancelled_execution_result(
+                contract, tool_call, started=started, rollback_plan=rollback_plan
+            )
 
         if dry_run:
             return ToolExecutionResult(
@@ -258,49 +368,66 @@ class SafeExecutionRuntime:
             )
 
         timeout_s = max(0.001, (contract.max_runtime_ms or 60_000) / 1000.0)
-        try:
-            completed = subprocess.run(
-                argv,
-                cwd=self.workspace_root,
-                capture_output=True,
-                text=True,
-                timeout=timeout_s,
-                check=False,
-            )
-            if completed.returncode == 0:
-                return ToolExecutionResult(
-                    contract_id=contract.contract_id,
-                    tool_call_id=tool_call.tool_call_id,
-                    status="completed",
-                    exit_code=completed.returncode,
-                    stdout=_truncate(completed.stdout or "", max_out),
-                    stderr=_truncate(completed.stderr or "", max_out),
-                    started_at=started,
-                    completed_at=now_utc(),
-                )
+        proc = subprocess.Popen(
+            argv,
+            cwd=self.workspace_root,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        kind = self._communicate_subprocess(
+            proc,
+            deadline_s=timeout_s,
+            cancellation_event=cancellation_event,
+            max_out=max_out,
+        )
+        stdout, stderr, outcome = kind
+        code = proc.returncode
+
+        if outcome == "cancelled":
             return ToolExecutionResult(
                 contract_id=contract.contract_id,
                 tool_call_id=tool_call.tool_call_id,
                 status="failed",
-                exit_code=completed.returncode,
-                stdout=_truncate(completed.stdout or "", max_out),
-                stderr=_truncate(completed.stderr or "", max_out),
+                stdout=stdout,
+                stderr=stderr or "Execution cancelled; subprocess terminated.",
                 started_at=started,
                 completed_at=now_utc(),
+                error_message="cancelled",
+                exit_code=code,
             )
-        except subprocess.TimeoutExpired as exc:
-            stdout = exc.stdout if isinstance(exc.stdout, str) else ""
-            stderr = exc.stderr if isinstance(exc.stderr, str) else ""
+        if outcome == "timeout":
             return ToolExecutionResult(
                 contract_id=contract.contract_id,
                 tool_call_id=tool_call.tool_call_id,
                 status="timed_out",
-                stdout=_truncate(stdout, max_out),
-                stderr=_truncate(stderr, max_out) or "Process timed out and was terminated.",
+                stdout=stdout,
+                stderr=stderr or "Process timed out and was terminated.",
                 started_at=started,
                 completed_at=now_utc(),
                 error_message="process_timeout_killed",
             )
+        if code == 0:
+            return ToolExecutionResult(
+                contract_id=contract.contract_id,
+                tool_call_id=tool_call.tool_call_id,
+                status="completed",
+                exit_code=code,
+                stdout=stdout,
+                stderr=stderr,
+                started_at=started,
+                completed_at=now_utc(),
+            )
+        return ToolExecutionResult(
+            contract_id=contract.contract_id,
+            tool_call_id=tool_call.tool_call_id,
+            status="failed",
+            exit_code=code,
+            stdout=stdout,
+            stderr=stderr,
+            started_at=started,
+            completed_at=now_utc(),
+        )
 
     def _allowlisted(self, argv: list[str]) -> bool:
         cmd = argv[0]

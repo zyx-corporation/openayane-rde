@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import sys
+import threading
+import time
 from pathlib import Path
 
 import pytest
@@ -185,3 +187,70 @@ def test_symlink_outside_workspace_blocked(tmp_path: Path) -> None:
     r = rt.execute(c, tc)
     assert r.status == "blocked"
     assert r.error_message == "path_outside_workspace"
+
+
+def test_cancellation_event_returns_failed_cancelled(tmp_path: Path) -> None:
+    cancel = threading.Event()
+    cancel.set()
+    tc = ToolCallRequest(
+        tool_call_id="c1",
+        agent_id="a",
+        tool_name="read_file",
+        action_name="invoke",
+        arguments={"path": "r.txt"},
+        target_resources=["r.txt"],
+        created_at=now_utc(),
+    )
+    (tmp_path / "r.txt").write_text("x", encoding="utf-8")
+    c = build_execution_task_contract(tc)
+    rt = SafeExecutionRuntime(tmp_path)
+    r = rt.execute(c, tc, cancellation_event=cancel)
+    assert r.status == "failed"
+    assert r.error_message == "cancelled"
+
+
+def test_cancellation_before_write_no_file_created(tmp_path: Path) -> None:
+    cancel = threading.Event()
+    cancel.set()
+    tc = ToolCallRequest(
+        tool_call_id="cw",
+        agent_id="a",
+        tool_name="write_file",
+        action_name="invoke",
+        arguments={"path": "new.txt", "content": "secret"},
+        target_resources=["new.txt"],
+        created_at=now_utc(),
+    )
+    c = build_execution_task_contract(tc)
+    rt = SafeExecutionRuntime(tmp_path)
+    r = rt.execute(c, tc, cancellation_event=cancel)
+    assert r.error_message == "cancelled"
+    assert not (tmp_path / "new.txt").exists()
+
+
+def test_subprocess_cancelled_while_running(tmp_path: Path) -> None:
+    py = sys.executable
+
+    def arm_cancel(ev: threading.Event) -> None:
+        time.sleep(0.12)
+        ev.set()
+
+    cancel = threading.Event()
+    threading.Thread(target=arm_cancel, args=(cancel,), daemon=True).start()
+    tc = ToolCallRequest(
+        tool_call_id="cx",
+        agent_id="a",
+        tool_name="bash",
+        action_name="run",
+        arguments={"command": f'{py} -c "import time; time.sleep(3)"'},
+        created_at=now_utc(),
+    )
+    c = build_execution_task_contract(tc).model_copy(update={"max_runtime_ms": 60_000})
+    rt = SafeExecutionRuntime(
+        tmp_path,
+        allow_subprocess_execution=True,
+        subprocess_allowlist={py: [r"time\.sleep"]},
+    )
+    r = rt.execute(c, tc, cancellation_event=cancel)
+    assert r.status == "failed"
+    assert r.error_message == "cancelled"
