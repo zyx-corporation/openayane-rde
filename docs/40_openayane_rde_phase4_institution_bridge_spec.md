@@ -27,6 +27,8 @@ Phase 4 does not replace RDE, Policy, SafeExecutionRuntime, HumanReviewWorkflow,
 
 Related Phase 3 boundary: `docs/37_openayane_rde_phase3_exit_report.md`.
 
+Phase 4 implementation completion record: `docs/43_openayane_rde_phase4_completion_report.md`.
+
 ## 1. Scope
 
 ### 1.1 In scope
