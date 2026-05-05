@@ -112,6 +112,8 @@ Required fields for initial bridge work:
 - rollback_result status, if available
 ```
 
+Normative requirements for how these inputs map to `EvidenceHandoff`, audit linkage, and missing-evidence behaviour: `docs/41_openayane_rde_phase3_to_phase4_evidence_handoff.md`.
+
 ## 4. Core models
 
 The following models are **draft specification targets**. They are Python-like sketches, not yet a committed schema contract.
