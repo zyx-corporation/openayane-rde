@@ -94,6 +94,7 @@ Phase 5 は運用の入口を整備した段階であり、制度的・法的保
 - 回帰運用: `schema validate` / `golden run` / `perf run` を継続実行。
 - 変更管理: docs/51 の breaking change ルールと CHANGELOG 更新規律を適用。
 - 拡張候補: API 実体化、GitHub live posting（明示 opt-in）、高保証監査の検討。
+- Phase 6 初期仕様: [`60_openayane_rde_phase6_research_evaluation_public_spec.md`](60_openayane_rde_phase6_research_evaluation_public_spec.md) を起点に研究評価スコープを固定。
 
 ## 7. 文書履歴
 
