@@ -59,6 +59,10 @@ Phase 2 enrichment sets `semantic_mode` to `structural_baseline` while keeping `
 
 Matching uses rule-based substring checks plus a small built-in **synonym map** (`rde/authorization.py`). It is a Phase 2 **baseline**, not domain-specific or language-aware matching. Future directions include locale-aware phrases (e.g. Japanese), code-oriented matchers, and optional LLM-based evaluators in later phases.
 
+## Phase 4 institution models (skeleton)
+
+`openayane_rde.institution` defines **typed skeletons** for `InstitutionRule`, `AuthorityRef`, and `ReviewerAuthority`, aligned with `docs/40_openayane_rde_phase4_institution_bridge_spec.md`. They establish boundaries for the Institution Bridge only — **not** production authority infrastructure (no PoP-UID, cryptographic proof, or external IdP).
+
 ## Licensing
 
 Paper and documentation are licensed under CC BY 4.0 unless otherwise noted. Code and build scripts are licensed under the MIT License.
