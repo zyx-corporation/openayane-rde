@@ -2,20 +2,27 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Literal, assert_never
+from urllib.parse import urlparse
 
 from openayane_rde.agent.tool_contract import (
+    _URL_KEYS,
+    _first_str,
     build_execution_task_contract,
     score_tool_call_risk,
 )
+from openayane_rde.audit.log import append_audit_event, audit_event_execution_gate_evaluated
 from openayane_rde.core.models import (
     ExecutionGateDecision,
     ExecutionGateEvaluation,
     ExecutionTaskContract,
+    RelationContext,
     ReviewDecision,
     ReviewRequest,
     RollbackPlan,
     ToolCallRequest,
+    ToolCallRisk,
     ToolExecutionResult,
 )
 from openayane_rde.policy.execution_rules import (
@@ -52,6 +59,73 @@ def post_review_execution_mode(decision: ReviewDecision) -> PostReviewExecutionM
     assert_never(d)
 
 
+def _url_host_matches_allowlist(url: str, hosts: tuple[str, ...]) -> bool:
+    host = (urlparse(url).hostname or "").lower()
+    if not host:
+        return False
+    return any(host == d.lower() or host.endswith(f".{d.lower()}") for d in hosts)
+
+
+def _network_allowlist_allows(
+    contract: ExecutionTaskContract,
+    tool_call: ToolCallRequest,
+    policy_hosts: tuple[str, ...],
+) -> tuple[bool, str]:
+    if not policy_hosts:
+        return True, ""
+    if contract.action_type not in ("network", "external_api"):
+        return True, ""
+    url = _first_str(tool_call.arguments, _URL_KEYS)
+    if not url:
+        return False, "Policy network allowlist is active; the tool call must include a URL."
+    if not _url_host_matches_allowlist(url, policy_hosts):
+        return False, "Network host is not on the policy allowlist."
+    return True, ""
+
+
+def _policy_halt_decision(
+    contract: ExecutionTaskContract,
+    relation_context: RelationContext,
+    reason: str,
+    *,
+    external: bool,
+) -> ExecutionGateDecision:
+    risk = ToolCallRisk(
+        risk_level="high",
+        risk_score=0.88,
+        irreversible=False,
+        external_side_effect=external,
+        protected_resource_touched=False,
+        rollback_possible=True,
+        unknown_target=False,
+        reasons=["policy_gate"],
+    )
+    return ExecutionGateDecision(
+        contract_id=contract.contract_id,
+        policy_action="halt",
+        reason=reason,
+        risk=risk,
+        rde_result=None,
+        relation_context=relation_context,
+    )
+
+
+def _evaluation_with_audit(
+    evaluation: ExecutionGateEvaluation,
+    tool_call: ToolCallRequest,
+    audit_log_path: str | Path | None,
+) -> ExecutionGateEvaluation:
+    if audit_log_path is None:
+        return evaluation
+    ae = audit_event_execution_gate_evaluated(
+        evaluation.decision,
+        tool_call_id=tool_call.tool_call_id,
+    )
+    append_audit_event(audit_log_path, ae)
+    gate = evaluation.decision.model_copy(update={"audit_event_id": ae.event_id})
+    return ExecutionGateEvaluation(decision=gate, contract=evaluation.contract)
+
+
 def evaluate_before_execution(
     tool_call: ToolCallRequest,
     relation_store: RelationStore,
@@ -61,14 +135,53 @@ def evaluate_before_execution(
     object_id: str = "unknown",
     relation_type: str = "generator-document",
     protected_resource_paths: list[str] | None = None,
+    audit_log_path: str | Path | None = None,
 ) -> ExecutionGateEvaluation:
     """Run contract building, risk scoring, synthetic RDE, and policy.
+
+    Optional ``denied_tool_names`` / ``network_hosts_allowlist`` on
+    :class:`~openayane_rde.policy.execution_rules.ExecutionPolicyConfig` run before
+    risk scoring. When ``audit_log_path`` is set, appends ``execution_gate_evaluated``
+    and sets :attr:`~openayane_rde.core.models.ExecutionGateDecision.audit_event_id`.
 
     Returns an :class:`ExecutionGateEvaluation` bundling the gate decision and
     :class:`ExecutionTaskContract` for :func:`enforce_execution_decision`.
     """
 
     contract = build_execution_task_contract(tool_call)
+    rc = relation_store.load_context(subject_id, object_id, relation_type)
+
+    if policy_config.denied_tool_names and tool_call.tool_name in policy_config.denied_tool_names:
+        gate = _policy_halt_decision(
+            contract,
+            rc,
+            "Tool blocked by policy denylist.",
+            external=contract.action_type in ("network", "external_api"),
+        )
+        return _evaluation_with_audit(
+            ExecutionGateEvaluation(decision=gate, contract=contract),
+            tool_call,
+            audit_log_path,
+        )
+
+    net_ok, net_msg = _network_allowlist_allows(
+        contract,
+        tool_call,
+        policy_config.network_hosts_allowlist,
+    )
+    if not net_ok:
+        gate = _policy_halt_decision(
+            contract,
+            rc,
+            net_msg,
+            external=True,
+        )
+        return _evaluation_with_audit(
+            ExecutionGateEvaluation(decision=gate, contract=contract),
+            tool_call,
+            audit_log_path,
+        )
+
     risk = score_tool_call_risk(
         contract,
         protected_resource_paths=protected_resource_paths,
@@ -83,7 +196,6 @@ def evaluate_before_execution(
             }
         }
     )
-    rc = relation_store.load_context(subject_id, object_id, relation_type)
     action, reason = decide_execution_policy_action(risk, rde, rc, policy_config)
     gate = ExecutionGateDecision(
         contract_id=contract.contract_id,
@@ -93,7 +205,11 @@ def evaluate_before_execution(
         rde_result=rde,
         relation_context=rc,
     )
-    return ExecutionGateEvaluation(decision=gate, contract=contract)
+    return _evaluation_with_audit(
+        ExecutionGateEvaluation(decision=gate, contract=contract),
+        tool_call,
+        audit_log_path,
+    )
 
 
 def enforce_execution_decision(

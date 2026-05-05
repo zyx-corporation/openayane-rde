@@ -26,6 +26,17 @@ class ExecutionPolicyConfig(BaseModel):
     allow_dry_run_for_high_risk: bool = False
     min_trust_for_auto_execute: float = Field(default=0.5, ge=0.0, le=1.0)
     min_stability_for_auto_execute: float = Field(default=0.4, ge=0.0, le=1.0)
+    denied_tool_names: tuple[str, ...] = Field(
+        default=(),
+        description="Exact tool_name values that are always blocked before risk scoring.",
+    )
+    network_hosts_allowlist: tuple[str, ...] = Field(
+        default=(),
+        description=(
+            "When non-empty, network / external_api calls must target a URL whose host "
+            "matches an entry (exact or subdomain). Otherwise the gate halts."
+        ),
+    )
 
     model_config = {"extra": "forbid"}
 

@@ -190,3 +190,84 @@ def test_external_unknown_human_review(tmp_path) -> None:
     ev = evaluate_before_execution(tc, store, ExecutionPolicyConfig())
     assert ev.contract.external_side_effect_kind == "unknown"
     assert ev.decision.policy_action == "human_review"
+
+
+def test_policy_denied_tool_halts(tmp_path) -> None:
+    store = JSONRelationStore(tmp_path / "jdeny.json")
+    tc = ToolCallRequest(
+        tool_call_id="deny1",
+        agent_id="a",
+        tool_name="forbidden_plugin",
+        action_name="invoke",
+        arguments={"path": "x"},
+        created_at=now_utc(),
+    )
+    ev = evaluate_before_execution(
+        tc,
+        store,
+        ExecutionPolicyConfig(denied_tool_names=("forbidden_plugin",)),
+        subject_id="s",
+        object_id="o",
+    )
+    assert ev.decision.policy_action == "halt"
+    assert ev.decision.rde_result is None
+
+
+def test_policy_network_allowlist_halts_offlist_host(tmp_path) -> None:
+    store = JSONRelationStore(tmp_path / "jnet.json")
+    tc = ToolCallRequest(
+        tool_call_id="n1",
+        agent_id="a",
+        tool_name="http_client",
+        action_name="fetch",
+        arguments={"method": "GET", "url": "https://evil.com/x"},
+        created_at=now_utc(),
+    )
+    ev = evaluate_before_execution(
+        tc,
+        store,
+        ExecutionPolicyConfig(network_hosts_allowlist=("example.com",)),
+    )
+    assert ev.decision.policy_action == "halt"
+    assert "allowlist" in ev.decision.reason.lower()
+
+
+def test_policy_network_allowlist_not_applied_to_filesystem(tmp_path) -> None:
+    store = JSONRelationStore(tmp_path / "jfs.json")
+    tc = ToolCallRequest(
+        tool_call_id="f1",
+        agent_id="a",
+        tool_name="read_file",
+        action_name="invoke",
+        arguments={"path": "doc.txt"},
+        created_at=now_utc(),
+    )
+    ev = evaluate_before_execution(
+        tc,
+        store,
+        ExecutionPolicyConfig(network_hosts_allowlist=("example.com",)),
+    )
+    assert ev.decision.policy_action == "approve"
+
+
+def test_evaluate_before_execution_writes_audit(tmp_path) -> None:
+    from openayane_rde.audit.log import load_events
+
+    store = JSONRelationStore(tmp_path / "jaudit.json")
+    log = tmp_path / "gate.jsonl"
+    tc = ToolCallRequest(
+        tool_call_id="aud1",
+        agent_id="a",
+        tool_name="read_file",
+        action_name="invoke",
+        arguments={"path": "doc.txt"},
+        created_at=now_utc(),
+    )
+    ev = evaluate_before_execution(
+        tc, store, ExecutionPolicyConfig(), audit_log_path=log
+    )
+    assert ev.decision.audit_event_id is not None
+    events = load_events(log)
+    assert len(events) == 1
+    assert events[0].action == "execution_gate_evaluated"
+    assert events[0].payload.get("policy_action") == ev.decision.policy_action

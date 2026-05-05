@@ -147,3 +147,41 @@ def test_human_review_approve_dry_run_then_runtime(tmp_path: Path) -> None:
     assert kinds == ["pre_synthetic"]
     basis = [e.payload.get("evidence_basis") for e in events if e.action == "execution_gate_evaluated"]
     assert basis == [["tool_risk_rule", "execution_contract"]]
+
+
+def test_denied_tool_blocked_and_audit_logged(tmp_path: Path) -> None:
+    db = tmp_path / "db.sqlite3"
+    store = SQLiteRelationStore(db)
+    store.initialize()
+    audit_log = tmp_path / "audit.jsonl"
+    tc = ToolCallRequest(
+        tool_call_id="tc-block",
+        agent_id="agent",
+        tool_name="forbidden_plugin",
+        action_name="invoke",
+        arguments={"path": "p"},
+        created_at=now_utc(),
+    )
+    cfg = ExecutionPolicyConfig(denied_tool_names=("forbidden_plugin",))
+    ev = evaluate_before_execution(
+        tc,
+        store,
+        cfg,
+        subject_id="agent",
+        object_id="ws",
+        audit_log_path=audit_log,
+    )
+    assert ev.decision.policy_action == "halt"
+    assert ev.decision.audit_event_id is not None
+
+    wf = HumanReviewWorkflow(store)
+    rt = SafeExecutionRuntime(tmp_path)
+    out = enforce_execution_decision(ev.decision, rt, wf, tool_call=tc, contract=ev.contract)
+    assert isinstance(out, ToolExecutionResult)
+    assert out.status == "blocked"
+
+    from openayane_rde.audit.log import load_events
+
+    rows = load_events(audit_log)
+    assert rows[0].action == "execution_gate_evaluated"
+    assert rows[0].payload.get("policy_action") == "halt"
