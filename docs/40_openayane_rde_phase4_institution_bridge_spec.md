@@ -1,6 +1,6 @@
 ---
 title: "OpenAyane RDE Phase 4 Institution Bridge Specification"
-version: "0.1"
+version: "0.2"
 date: "2026-05-05"
 status: "draft-specification"
 ---
@@ -24,6 +24,8 @@ Who or what has the authority to accept the consequence, under which institution
 ```
 
 Phase 4 does not replace RDE, Policy, SafeExecutionRuntime, HumanReviewWorkflow, or RollbackManager. It receives their outputs as evidence and turns them into institutionally accountable decisions.
+
+Related Phase 3 boundary: `docs/37_openayane_rde_phase3_exit_report.md`.
 
 ## 1. Scope
 
@@ -112,7 +114,17 @@ Required fields for initial bridge work:
 
 ## 4. Core models
 
-The following models are specification targets. They may be implemented as Pydantic models in a later PR.
+The following models are **draft specification targets**. They are Python-like sketches, not yet a committed schema contract.
+
+When implementation starts, field names must be synchronized across:
+
+```text
+- Pydantic models under src/
+- schemas/ JSON schema files, if serialized
+- tests and fixtures
+- docs/37 Phase 3 evidence handoff references
+- audit payload field names
+```
 
 ### 4.1 InstitutionRule
 
@@ -306,6 +318,8 @@ Detailed flow:
 8. Append audit event and link event IDs.
 ```
 
+Implementation guidance: the first Phase 4 implementation PR should remain a skeleton or model-only PR. Avoid adding UI, external integrations, or broad persistence before the authority model stabilizes.
+
 ## 8. Initial API sketch
 
 ```python
@@ -445,3 +459,10 @@ The next Phase 4 document or PR should either:
 ```
 
 Avoid starting with UI or external integrations before the authority model is stable.
+
+## 13. Revision history
+
+| Version | Date | Notes |
+|---|---|---|
+| 0.1 | 2026-05-05 | Initial Phase 4 Institution Bridge draft. |
+| 0.2 | 2026-05-05 | Clarified draft-model status, schema synchronization policy, skeleton-first guidance, and Phase 3 exit link. |
