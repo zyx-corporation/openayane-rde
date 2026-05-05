@@ -1,12 +1,11 @@
 """Phase 4 institution — reviewer authority, reversibility, and halt distinction (Issue #31).
 
-These tests encode **deterministic expectations** for a future `InstitutionBridge` (#30).
-Policy helpers live in this module only (regression fixtures, not production authority).
+Authority bounds and decision-kind previews use ``openayane_rde.institution.policy`` so tests stay
+aligned with ``DeterministicInstitutionBridge`` (see ``decision_kind_for_reviewer_and_rule``).
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import UTC, datetime
 
 import pytest
@@ -24,58 +23,15 @@ from openayane_rde.institution import (
     InstitutionRule,
     ReviewerAuthority,
 )
-from openayane_rde.institution.models import InstitutionalDecisionKind
-
-# Same ordering as RDE / policy layers use informally; kept local to tests.
-_RISK_ORDER: dict[RiskLevel, int] = {
-    "low": 0,
-    "medium": 1,
-    "high": 2,
-    "critical": 3,
-}
+from openayane_rde.institution.policy import (
+    HandoffDecisionInput,
+    decision_kind_for_reviewer_and_rule,
+    reviewer_covers_action,
+)
 
 
 def _dt() -> datetime:
     return datetime(2026, 5, 5, 12, 0, tzinfo=UTC)
-
-
-@dataclass(frozen=True, slots=True)
-class ActionIntent:
-    """Test-only action intent (reversibility: True=irreversible, False=reversible, None=unknown)."""
-
-    action_type: ExecutionActionType
-    side_effect: ExternalSideEffectKind
-    risk: RiskLevel
-    reversibility: bool | None
-
-
-def reviewer_covers_intent(ra: ReviewerAuthority, intent: ActionIntent) -> bool:
-    """Whether the reviewer's *declared* bounds cover the action (test stub)."""
-
-    if intent.action_type not in ra.allowed_action_types:
-        return False
-    if intent.side_effect not in ra.allowed_side_effects:
-        return False
-    return _RISK_ORDER[ra.max_risk_level] >= _RISK_ORDER[intent.risk]
-
-
-def stub_decision(
-    ra: ReviewerAuthority,
-    rule: InstitutionRule,
-    intent: ActionIntent,
-) -> InstitutionalDecisionKind:
-    """Minimal conservative path for regression tests; mirrors docs/40 §6 spirit."""
-
-    if intent.reversibility is None:
-        return "require_more_evidence"
-    if not reviewer_covers_intent(ra, intent):
-        return "require_higher_authority"
-    if intent.reversibility is True:
-        if not rule.allows_irreversible_action:
-            return "halt_institutionally"
-        if not ra.can_approve_irreversible:
-            return "require_higher_authority"
-    return "accept"
 
 
 def _base_rule(*, allows_irreversible: bool) -> InstitutionRule:
@@ -122,9 +78,14 @@ def _reviewer(
 def test_reviewer_insufficient_risk_cannot_cover_critical() -> None:
     ra = _reviewer(max_risk="medium", can_irrev=False)
     rule = _base_rule(allows_irreversible=False)
-    intent = ActionIntent("network", "publishing", "critical", False)
-    assert not reviewer_covers_intent(ra, intent)
-    assert stub_decision(ra, rule, intent) == "require_higher_authority"
+    inp = HandoffDecisionInput("network", "publishing", "critical", False)
+    assert not reviewer_covers_action(
+        ra,
+        action_type=inp.action_type,
+        side_effect=inp.side_effect,
+        action_risk=inp.risk_level,
+    )
+    assert decision_kind_for_reviewer_and_rule(ra, rule, inp) == "require_higher_authority"
 
 
 def test_reviewer_insufficient_action_type() -> None:
@@ -145,39 +106,54 @@ def test_reviewer_insufficient_action_type() -> None:
         evidence_required=[],
         created_at=_dt(),
     )
-    intent = ActionIntent("execute", "notification", "high", False)
-    assert not reviewer_covers_intent(ra, intent)
-    assert stub_decision(ra, rule, intent) == "require_higher_authority"
+    inp = HandoffDecisionInput("execute", "notification", "high", False)
+    assert not reviewer_covers_action(
+        ra,
+        action_type=inp.action_type,
+        side_effect=inp.side_effect,
+        action_risk=inp.risk_level,
+    )
+    assert decision_kind_for_reviewer_and_rule(ra, rule, inp) == "require_higher_authority"
 
 
 def test_reviewer_sufficient_for_allowed_high_risk() -> None:
     ra = _reviewer(max_risk="high", can_irrev=False)
     rule = _base_rule(allows_irreversible=False)
-    intent = ActionIntent("network", "publishing", "high", False)
-    assert reviewer_covers_intent(ra, intent)
-    assert stub_decision(ra, rule, intent) == "accept"
+    inp = HandoffDecisionInput("network", "publishing", "high", False)
+    assert reviewer_covers_action(
+        ra,
+        action_type=inp.action_type,
+        side_effect=inp.side_effect,
+        action_risk=inp.risk_level,
+    )
+    assert decision_kind_for_reviewer_and_rule(ra, rule, inp) == "accept"
 
 
 def test_irreversible_requires_elevation_when_reviewer_cannot_approve() -> None:
     ra = _reviewer(max_risk="high", can_irrev=False)
     rule = _base_rule(allows_irreversible=True)
-    intent = ActionIntent("network", "publishing", "high", True)
-    assert reviewer_covers_intent(ra, intent)
-    assert stub_decision(ra, rule, intent) == "require_higher_authority"
+    inp = HandoffDecisionInput("network", "publishing", "high", True)
+    assert reviewer_covers_action(
+        ra,
+        action_type=inp.action_type,
+        side_effect=inp.side_effect,
+        action_risk=inp.risk_level,
+    )
+    assert decision_kind_for_reviewer_and_rule(ra, rule, inp) == "require_higher_authority"
 
 
 def test_irreversible_halts_when_rule_forbids() -> None:
     ra = _reviewer(max_risk="critical", can_irrev=True)
     rule = _base_rule(allows_irreversible=False)
-    intent = ActionIntent("network", "publishing", "high", True)
-    assert stub_decision(ra, rule, intent) == "halt_institutionally"
+    inp = HandoffDecisionInput("network", "publishing", "high", True)
+    assert decision_kind_for_reviewer_and_rule(ra, rule, inp) == "halt_institutionally"
 
 
 def test_unknown_reversibility_requires_more_evidence() -> None:
     ra = _reviewer(max_risk="critical", can_irrev=True)
     rule = _base_rule(allows_irreversible=True)
-    intent = ActionIntent("network", "publishing", "low", None)
-    assert stub_decision(ra, rule, intent) == "require_more_evidence"
+    inp = HandoffDecisionInput("network", "publishing", "low", None)
+    assert decision_kind_for_reviewer_and_rule(ra, rule, inp) == "require_more_evidence"
 
 
 def test_policy_halt_json_differs_from_rde_halt() -> None:

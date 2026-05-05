@@ -1,6 +1,6 @@
 """Phase 4 Institution Bridge — skeleton models for institutional rules and authority."""
 
-from openayane_rde.institution.bridge import DeterministicInstitutionBridge, HandoffDecisionInput
+from openayane_rde.institution.bridge import DeterministicInstitutionBridge
 from openayane_rde.institution.models import (
     AuthorityRef,
     EvidenceHandoff,
@@ -9,6 +9,7 @@ from openayane_rde.institution.models import (
     InstitutionRule,
     ReviewerAuthority,
 )
+from openayane_rde.institution.policy import HandoffDecisionInput, decision_kind_for_reviewer_and_rule
 
 __all__ = [
     "AuthorityRef",
@@ -19,4 +20,5 @@ __all__ = [
     "InstitutionalDecision",
     "InstitutionRule",
     "ReviewerAuthority",
+    "decision_kind_for_reviewer_and_rule",
 ]
