@@ -7,8 +7,8 @@ from pathlib import Path
 
 
 from openayane_rde.audit.hash import sha256_text
-from openayane_rde.audit.log import append_event, load_events
-from openayane_rde.core.models import AuditEvent
+from openayane_rde.audit.log import append_event, audit_event_policy_decision, load_events
+from openayane_rde.core.models import AuditEvent, PolicyDecision
 
 
 def make_event(**kwargs: object) -> AuditEvent:
@@ -113,3 +113,20 @@ def test_parent_directory_created_automatically() -> None:
         assert path.exists()
         loaded = load_events(path)
         assert len(loaded) == 1
+
+
+def test_audit_policy_decision_splits_rde_and_institution_payload() -> None:
+    pd = PolicyDecision(
+        contract_id="tc_1",
+        rde_result_id="rde_1",
+        action="human_review",
+        rationale="Combined rationale.",
+        institution_rule_id="rule_pub",
+        institutional_rationale="Org rule requires review.",
+    )
+    ev = audit_event_policy_decision(pd, rde_classification="preserved")
+    assert ev.action == "make_policy_decision"
+    assert ev.policy_decision_id == pd.decision_id
+    assert ev.payload["rde_classification"] == "preserved"
+    assert ev.payload["institution_rule_id"] == "rule_pub"
+    assert ev.payload["institutional_rationale"] == "Org rule requires review."

@@ -531,22 +531,25 @@ RDEは意味変化の評価器であり、制度判断そのものではない�
 
 ```text
 src/openayane_rde/institution/rule_registry.py
-  - normative rule registry
+  - InstitutionRuleRegistry（first-match 参照）
 
 src/openayane_rde/institution/authority.py
-  - actor role
-  - permission
-  - approval chain
+  - Permission, ActorRole, ApprovalStep, ApprovalChain
 
 src/openayane_rde/institution/pop_uid.py
-  - PoP-UID adapter interface
+  - PopUidAdapter（Protocol; 実装は呼び出し側）
 
 src/openayane_rde/institution/accountability.py
-  - responsibility mapping
-  - decision provenance
+  - DecisionProvenance / provenance_from_policy_decision
 
 src/openayane_rde/policy/institution_bridge.py
-  - institution-aware policy adjustment
+  - decide_policy_with_institution（RDE → PolicyDecision に制度ルール・PoP を重ねる）
+
+src/openayane_rde/audit/log.py
+  - audit_event_policy_decision（監査ペイロードで RDE 分類と institution を分離）
+
+src/openayane_rde/core/models.py PolicyDecision
+  - institution_rule_id / institutional_rationale（任意参照）
 ```
 
 ### 7.3 制度ルールの例
