@@ -1,4 +1,4 @@
-"""Unit tests for Phase 4 institution skeleton models (Issues #27, #28)."""
+"""Unit tests for Phase 4 institution skeleton models (Issues #27–#29)."""
 
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ from pydantic import ValidationError
 from openayane_rde.institution import (
     AuthorityRef,
     EvidenceHandoff,
+    HaltProvenance,
     InstitutionalDecision,
     InstitutionRule,
     ReviewerAuthority,
@@ -124,5 +125,36 @@ def test_institutional_decision_invalid_kind_rejected() -> None:
                 "decision": "not_a_decision",
                 "rationale": "x",
                 "created_at": _dt(),
+            }
+        )
+
+
+def test_halt_provenance_policy_vs_rde_distinct_in_json() -> None:
+    policy = HaltProvenance(
+        halt_kind="policy_halt",
+        policy_rule_id="pol_1",
+        explanation="Blocked before semantic evaluation.",
+        evidence_basis=["tool_risk_rule"],
+    )
+    rde = HaltProvenance(
+        halt_kind="rde_halt",
+        rde_result_id="rde_9",
+        explanation="Structural drift unacceptable.",
+        evidence_basis=["structural_diff"],
+    )
+    p2 = HaltProvenance.model_validate_json(policy.model_dump_json())
+    r2 = HaltProvenance.model_validate_json(rde.model_dump_json())
+    assert p2.halt_kind == "policy_halt"
+    assert p2.policy_rule_id == "pol_1"
+    assert r2.halt_kind == "rde_halt"
+    assert r2.rde_result_id == "rde_9"
+
+
+def test_halt_provenance_invalid_kind_rejected() -> None:
+    with pytest.raises(ValidationError):
+        HaltProvenance.model_validate(
+            {
+                "halt_kind": "unknown_halt",
+                "explanation": "x",
             }
         )

@@ -3,6 +3,7 @@
 These models implement the draft shapes in ``docs/40_openayane_rde_phase4_institution_bridge_spec.md``.
 They are **not** production authority infrastructure (no PoP-UID, no cryptographic proof).
 `EvidenceHandoff` / `InstitutionalDecision` are bridge records, not execution outcomes.
+`HaltProvenance` classifies halt-like outcomes without flattening them.
 """
 
 from __future__ import annotations
@@ -115,3 +116,27 @@ class InstitutionalDecision(BaseModel):
     irreversible_accepted: bool = False
     audit_event_id: str | None = None
     created_at: datetime
+
+
+HaltKind = Literal[
+    "policy_halt",
+    "rde_halt",
+    "runtime_block",
+    "review_rejection",
+    "institutional_halt",
+]
+
+
+class HaltProvenance(BaseModel):
+    """Distinguishes policy halt, RDE halt, and other halt-like outcomes for audit and UI.
+
+    The same status string or color must not erase the semantic difference between
+    policy-driven and RDE-driven halts.
+    """
+
+    halt_kind: HaltKind
+    evidence_basis: list[EvidenceBasis] = Field(default_factory=list)
+    policy_rule_id: str | None = None
+    rde_result_id: str | None = None
+    audit_event_id: str | None = None
+    explanation: str
