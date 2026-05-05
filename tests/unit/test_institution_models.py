@@ -8,6 +8,8 @@ import pytest
 from pydantic import ValidationError
 
 from openayane_rde.institution import (
+    ApprovalChain,
+    ApprovalStep,
     AuthorityRef,
     EvidenceHandoff,
     HaltProvenance,
@@ -158,3 +160,35 @@ def test_halt_provenance_invalid_kind_rejected() -> None:
                 "explanation": "x",
             }
         )
+
+
+def test_approval_chain_round_trip() -> None:
+    chain = ApprovalChain(
+        chain_id="dual_1",
+        name="Two-step",
+        steps=[
+            ApprovalStep(order=0, role_id="maintainer", required_approvals=1),
+            ApprovalStep(order=1, role_id="security", required_approvals=1),
+        ],
+    )
+    c2 = ApprovalChain.model_validate_json(chain.model_dump_json())
+    assert c2.chain_id == "dual_1"
+    assert len(c2.steps) == 2
+    assert c2.steps[1].role_id == "security"
+
+
+def test_evidence_handoff_rollback_fields_round_trip() -> None:
+    h = EvidenceHandoff(
+        handoff_id="h_rb",
+        contract_id="c1",
+        tool_call_id="t1",
+        rollback_plan_id="rbp_1",
+        rollback_result_id="rbr_1",
+        audit_event_ids=["ae1"],
+        evidence_basis=["rollback_result"],
+        explanation="x",
+        created_at=_dt(),
+    )
+    h2 = EvidenceHandoff.model_validate_json(h.model_dump_json())
+    assert h2.rollback_plan_id == "rbp_1"
+    assert h2.rollback_result_id == "rbr_1"
