@@ -697,6 +697,10 @@ class ExecutionGateDecision(BaseModel):
     rollback_plan_required: bool = False
     review_request_id: str | None = None
     audit_event_id: str | None = None
+    policy_adjustment_notes: list[str] = Field(
+        default_factory=list,
+        description="Relation-history escalations aligned with Phase 1 policy bridge rules.",
+    )
     created_at: datetime = Field(default_factory=now_utc)
 
     model_config = {"extra": "forbid"}

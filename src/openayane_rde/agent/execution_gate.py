@@ -27,6 +27,7 @@ from openayane_rde.core.models import (
 )
 from openayane_rde.policy.execution_rules import (
     ExecutionPolicyConfig,
+    apply_relation_history_to_execution_gate,
     decide_execution_policy_action,
     synthetic_rde_for_tool,
 )
@@ -197,13 +198,18 @@ def evaluate_before_execution(
         }
     )
     action, reason = decide_execution_policy_action(risk, rde, rc, policy_config)
+    adjusted, bridge_notes = apply_relation_history_to_execution_gate(action, rc)
+    merged_reason = reason
+    if bridge_notes:
+        merged_reason = f"{reason} | {' '.join(bridge_notes)}"
     gate = ExecutionGateDecision(
         contract_id=contract.contract_id,
-        policy_action=action,
-        reason=reason,
+        policy_action=adjusted,
+        reason=merged_reason,
         risk=risk,
         rde_result=rde,
         relation_context=rc,
+        policy_adjustment_notes=bridge_notes,
     )
     return _evaluation_with_audit(
         ExecutionGateEvaluation(decision=gate, contract=contract),

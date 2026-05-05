@@ -3,7 +3,11 @@
 from __future__ import annotations
 
 from openayane_rde.agent.execution_gate import evaluate_before_execution
-from openayane_rde.core.models import ToolCallRequest
+from openayane_rde.core.models import (
+    GeneratorReliabilityProfile,
+    RelationStoreRecord,
+    ToolCallRequest,
+)
 from openayane_rde.core.time import now_utc
 from openayane_rde.policy.execution_rules import ExecutionPolicyConfig
 from openayane_rde.relation.store import JSONRelationStore
@@ -271,3 +275,80 @@ def test_evaluate_before_execution_writes_audit(tmp_path) -> None:
     assert len(events) == 1
     assert events[0].action == "execution_gate_evaluated"
     assert events[0].payload.get("policy_action") == ev.decision.policy_action
+    assert events[0].payload.get("gating_rationale") == []
+
+
+def test_policy_bridge_low_generator_reliability_escalates_to_human_review(
+    tmp_path,
+) -> None:
+    store = JSONRelationStore(tmp_path / "jpbridge.json")
+    store.upsert(
+        RelationStoreRecord(
+            subject_id="s",
+            object_id="o",
+            generator_reliability_profile=GeneratorReliabilityProfile(
+                generator_id="g1",
+                reliability_score=0.25,
+            ),
+            trust=0.9,
+            stability=0.9,
+        )
+    )
+    tc = ToolCallRequest(
+        tool_call_id="pb1",
+        agent_id="a",
+        tool_name="read_file",
+        action_name="invoke",
+        arguments={"path": "doc.txt"},
+        created_at=now_utc(),
+    )
+    ev = evaluate_before_execution(
+        tc,
+        store,
+        ExecutionPolicyConfig(),
+        subject_id="s",
+        object_id="o",
+    )
+    assert ev.decision.policy_action == "human_review"
+    assert ev.decision.policy_adjustment_notes
+    assert "generator_reliability_score" in ev.decision.policy_adjustment_notes[0]
+
+
+def test_audit_gating_rationale_when_policy_bridge_escalates(tmp_path) -> None:
+    from openayane_rde.audit.log import load_events
+
+    store = JSONRelationStore(tmp_path / "jaudit2.json")
+    store.upsert(
+        RelationStoreRecord(
+            subject_id="s",
+            object_id="o",
+            generator_reliability_profile=GeneratorReliabilityProfile(
+                generator_id="g1",
+                reliability_score=0.2,
+            ),
+            trust=0.9,
+            stability=0.9,
+        )
+    )
+    log = tmp_path / "gate2.jsonl"
+    tc = ToolCallRequest(
+        tool_call_id="aud2",
+        agent_id="a",
+        tool_name="read_file",
+        action_name="invoke",
+        arguments={"path": "doc.txt"},
+        created_at=now_utc(),
+    )
+    evaluate_before_execution(
+        tc,
+        store,
+        ExecutionPolicyConfig(),
+        subject_id="s",
+        object_id="o",
+        audit_log_path=log,
+    )
+    events = load_events(log)
+    rationale = events[0].payload.get("gating_rationale")
+    assert isinstance(rationale, list)
+    assert len(rationale) >= 1
+    assert "Policy bridge" in rationale[0]

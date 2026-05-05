@@ -91,6 +91,7 @@ def audit_event_execution_gate_evaluated(
             "evaluation_kind": eval_kind,
             "evidence_basis": gate.rde_result.evidence_basis if gate.rde_result else [],
             "risk_level": gate.risk.risk_level,
+            "gating_rationale": gate.policy_adjustment_notes,
         },
     )
 

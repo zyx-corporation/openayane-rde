@@ -13,6 +13,7 @@ from openayane_rde.core.models import (
     RDEResult,
     ToolCallRisk,
 )
+from openayane_rde.policy.rules import HIGH_HISTORY_THRESHOLD_FOR_APPROVE_WITH_NOTES
 
 
 class ExecutionPolicyConfig(BaseModel):
@@ -149,3 +150,78 @@ def decide_execution_policy_action(
         return "human_review", "Low risk but auto-execute disabled."
 
     assert_never(risk.risk_level)
+
+
+def apply_relation_history_to_execution_gate(
+    action: ExecutionGatePolicyAction,
+    relation_context: RelationContext | None,
+) -> tuple[ExecutionGatePolicyAction, list[str]]:
+    """Align execution gate actions with Phase 1 policy bridge history adjustments.
+
+    Escalates ``approve`` / ``approve_with_notes`` / ``dry_run_only`` toward
+    ``human_review`` when relation signals indicate elevated review need (same
+    thresholds as :func:`~openayane_rde.policy.rules.decide_action` history path).
+    """
+
+    if relation_context is None:
+        return action, []
+
+    notes: list[str] = []
+    cur = action
+
+    rel = relation_context.generator_reliability_score
+    if rel is not None and rel <= 0.3 and cur in (
+        "approve",
+        "approve_with_notes",
+        "dry_run_only",
+    ):
+        notes.append(
+            "Policy bridge: generator_reliability_score <= 0.3; "
+            "escalated gate action to human_review."
+        )
+        return "human_review", notes
+
+    if cur == "approve" and relation_context.review_threshold_adjustment >= 0.5:
+        notes.append(
+            "Policy bridge: review_threshold_adjustment >= 0.5; "
+            "escalated approve to human_review."
+        )
+        return "human_review", notes
+
+    if (
+        cur == "approve_with_notes"
+        and relation_context.review_threshold_adjustment
+        >= HIGH_HISTORY_THRESHOLD_FOR_APPROVE_WITH_NOTES
+    ):
+        notes.append(
+            "Policy bridge: review_threshold_adjustment >= "
+            f"{HIGH_HISTORY_THRESHOLD_FOR_APPROVE_WITH_NOTES}; "
+            "escalated approve_with_notes to human_review."
+        )
+        return "human_review", notes
+
+    if (
+        cur == "dry_run_only"
+        and relation_context.review_threshold_adjustment
+        >= HIGH_HISTORY_THRESHOLD_FOR_APPROVE_WITH_NOTES
+    ):
+        notes.append(
+            "Policy bridge: review_threshold_adjustment >= "
+            f"{HIGH_HISTORY_THRESHOLD_FOR_APPROVE_WITH_NOTES}; "
+            "escalated dry_run_only to human_review."
+        )
+        return "human_review", notes
+
+    df = relation_context.document_fragility_score
+    if (
+        df is not None
+        and df >= 0.7
+        and cur in ("approve", "approve_with_notes", "dry_run_only")
+    ):
+        notes.append(
+            "Policy bridge: document_fragility_score >= 0.7; "
+            "escalated gate action to human_review."
+        )
+        return "human_review", notes
+
+    return action, []
