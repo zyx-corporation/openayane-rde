@@ -20,6 +20,8 @@ from openayane_rde.audit.log import append_event
 from openayane_rde.core.models import (
     AuditEvent,
     EvidenceBasis,
+    ExecutionActionType,
+    ExternalSideEffectKind,
     GeneratorOutput,
     PolicyDecision,
     PostExecutionDiff,
@@ -32,7 +34,10 @@ from openayane_rde.core.models import (
 from openayane_rde.diff.json_diff import JsonDiff
 from openayane_rde.diff.markdown_diff import MarkdownDiff
 from openayane_rde.diff.python_ast_diff import PythonAstDiff
+from openayane_rde.institution.pop_uid import PopUidAdapter
+from openayane_rde.institution.rule_registry import InstitutionRuleRegistry
 from openayane_rde.policy.bridge import decide_policy
+from openayane_rde.policy.institution_bridge import decide_policy_with_institution
 from openayane_rde.rde.core import evaluate_rde
 from openayane_rde.runtime.result import Phase1EvaluationResult
 from openayane_rde.semantic.delta_engine import estimate_semantic_delta
@@ -43,6 +48,35 @@ _DIFF_ENGINES = {
     "markdown": MarkdownDiff(),
     "python": PythonAstDiff(),
 }
+
+
+def _policy_decision_with_optional_institution(
+    rde_result: RDEResult,
+    task_contract: TaskContract,
+    relation_context: RelationContext | None,
+    *,
+    institution_registry: InstitutionRuleRegistry | None,
+    institution_action_type: ExecutionActionType | None,
+    institution_side_effect: ExternalSideEffectKind | None,
+    pop_verifier: PopUidAdapter | None,
+    pop_subject_id: str | None,
+) -> PolicyDecision:
+    if (
+        institution_registry is not None
+        and institution_action_type is not None
+        and institution_side_effect is not None
+    ):
+        return decide_policy_with_institution(
+            rde_result,
+            task_contract,
+            relation_context,
+            institution_registry,
+            action_type=institution_action_type,
+            side_effect=institution_side_effect,
+            pop_verifier=pop_verifier,
+            pop_subject_id=pop_subject_id,
+        )
+    return decide_policy(rde_result, task_contract, relation_context)
 
 
 def run_structural_diff(
@@ -83,6 +117,12 @@ def run_phase1_evaluation(
     required_json_fields: list[str] | None = None,
     relation_context: RelationContext | None = None,
     audit_log_path: str | Path | None = None,
+    *,
+    institution_registry: InstitutionRuleRegistry | None = None,
+    institution_action_type: ExecutionActionType | None = None,
+    institution_side_effect: ExternalSideEffectKind | None = None,
+    pop_verifier: PopUidAdapter | None = None,
+    pop_subject_id: str | None = None,
 ) -> Phase1EvaluationResult:
     """Execute the Phase 1 evaluation flow.
 
@@ -92,6 +132,12 @@ def run_phase1_evaluation(
       3. Evaluate RDE
       4. Decide policy
       5. Write audit event (optional, when `audit_log_path` is set)
+
+    Optional keyword-only institution hooks (all three registry axes required to
+    enable :func:`~openayane_rde.policy.institution_bridge.decide_policy_with_institution`):
+
+    ``institution_registry``, ``institution_action_type``, ``institution_side_effect``,
+    plus optional ``pop_verifier`` / ``pop_subject_id``.
 
     Returns:
         Phase1EvaluationResult with structural diff, semantic delta, RDE result,
@@ -122,7 +168,16 @@ def run_phase1_evaluation(
         }
     )
 
-    policy_decision = decide_policy(rde_result, task_contract, relation_context)
+    policy_decision = _policy_decision_with_optional_institution(
+        rde_result,
+        task_contract,
+        relation_context,
+        institution_registry=institution_registry,
+        institution_action_type=institution_action_type,
+        institution_side_effect=institution_side_effect,
+        pop_verifier=pop_verifier,
+        pop_subject_id=pop_subject_id,
+    )
 
     audit_event: AuditEvent | None = None
     if audit_log_path is not None:
@@ -179,6 +234,8 @@ def _write_audit_event(
             "policy_action": policy_decision.action,
             "evaluation_kind": rde_result.evaluation_kind,
             "evidence_basis": rde_result.evidence_basis,
+            "institution_rule_id": policy_decision.institution_rule_id,
+            "institutional_rationale": policy_decision.institutional_rationale,
         },
     )
     append_event(audit_log_path, event)
@@ -194,6 +251,12 @@ def run_phase1_evaluation_from_post_execution_diff(
     required_json_fields: list[str] | None = None,
     relation_context: RelationContext | None = None,
     audit_log_path: str | Path | None = None,
+    *,
+    institution_registry: InstitutionRuleRegistry | None = None,
+    institution_action_type: ExecutionActionType | None = None,
+    institution_side_effect: ExternalSideEffectKind | None = None,
+    pop_verifier: PopUidAdapter | None = None,
+    pop_subject_id: str | None = None,
 ) -> Phase1EvaluationResult:
     """Run Phase 1 RDE on a post-execution diff (structural diff optional).
 
@@ -230,7 +293,16 @@ def run_phase1_evaluation_from_post_execution_diff(
         update={"evaluation_kind": "post_structural", "evidence_basis": _post_evidence}
     )
 
-    policy_decision = decide_policy(rde_result, task_contract, relation_context)
+    policy_decision = _policy_decision_with_optional_institution(
+        rde_result,
+        task_contract,
+        relation_context,
+        institution_registry=institution_registry,
+        institution_action_type=institution_action_type,
+        institution_side_effect=institution_side_effect,
+        pop_verifier=pop_verifier,
+        pop_subject_id=pop_subject_id,
+    )
 
     audit_event: AuditEvent | None = None
     if audit_log_path is not None:
