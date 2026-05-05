@@ -97,6 +97,8 @@ class EvidenceHandoff(BaseModel):
     review_decision_id: str | None = None
     execution_id: str | None = None
     rde_result_id: str | None = None
+    rollback_plan_id: str | None = None
+    rollback_result_id: str | None = None
     audit_event_ids: list[str] = Field(default_factory=list)
     evidence_basis: list[EvidenceBasis] = Field(default_factory=list)
     explanation: str
