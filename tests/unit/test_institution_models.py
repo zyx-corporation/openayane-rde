@@ -1,4 +1,4 @@
-"""Unit tests for Phase 4 institution skeleton models (Issue #27)."""
+"""Unit tests for Phase 4 institution skeleton models (Issues #27, #28)."""
 
 from __future__ import annotations
 
@@ -7,7 +7,13 @@ from datetime import UTC, datetime
 import pytest
 from pydantic import ValidationError
 
-from openayane_rde.institution import AuthorityRef, InstitutionRule, ReviewerAuthority
+from openayane_rde.institution import (
+    AuthorityRef,
+    EvidenceHandoff,
+    InstitutionalDecision,
+    InstitutionRule,
+    ReviewerAuthority,
+)
 
 
 def _dt() -> datetime:
@@ -78,4 +84,45 @@ def test_empty_rule_id_rejected() -> None:
             minimum_authority_level="L0",
             evidence_required=[],
             created_at=_dt(),
+        )
+
+
+def test_evidence_handoff_preserves_audit_and_basis() -> None:
+    h = EvidenceHandoff(
+        handoff_id="h1",
+        contract_id="tc_1",
+        tool_call_id="tc_1",
+        audit_event_ids=["ae_1", "ae_2"],
+        evidence_basis=["structural_diff", "human_review_decision"],
+        explanation="Phase 3 evidence bundle for bridge.",
+        created_at=_dt(),
+    )
+    h2 = EvidenceHandoff.model_validate_json(h.model_dump_json())
+    assert h2.audit_event_ids == ["ae_1", "ae_2"]
+    assert "structural_diff" in h2.evidence_basis
+
+
+def test_institutional_decision_kinds_and_round_trip() -> None:
+    d = InstitutionalDecision(
+        institutional_decision_id="id_1",
+        handoff_id="h1",
+        decision="require_higher_authority",
+        rationale="Reviewer lacks minimum authority for irreversible side effect.",
+        created_at=_dt(),
+    )
+    d2 = InstitutionalDecision.model_validate_json(d.model_dump_json())
+    assert d2.decision == "require_higher_authority"
+    assert d2.risk_accepted is False
+
+
+def test_institutional_decision_invalid_kind_rejected() -> None:
+    with pytest.raises(ValidationError):
+        InstitutionalDecision.model_validate(
+            {
+                "institutional_decision_id": "id_1",
+                "handoff_id": "h1",
+                "decision": "not_a_decision",
+                "rationale": "x",
+                "created_at": _dt(),
+            }
         )
