@@ -1,6 +1,6 @@
 ---
 title: "OpenAyane RDE Phase 5 Operational Hardening and Ecosystem Integration Specification"
-version: "0.1"
+version: "0.2"
 date: "2026-05-05"
 status: "draft-specification"
 ---
@@ -569,7 +569,49 @@ P5-8: Add performance measurement harness
 P5-9: Add release and compatibility policy docs
 ```
 
-## 17. Acceptance criteria for Phase 5 exit
+## 17. Issue branch plan and execution order
+
+Phase 5 should use **one Issue = one branch = one PR** as the default. This keeps operational ΔM small and makes it clear which pull request changed which invocation, configuration, adapter, regression, or release surface.
+
+Recommended execution order:
+
+| Order | Issue | Purpose | Branch | Rationale |
+|---:|---|---|---|---|
+| 1 | #44 / P5-1 | CLI foundation and command skeletons | `phase5/issue-44-cli-foundation` | The CLI is the operator-facing base for config, inspection, regression, and performance commands. |
+| 2 | #45 / P5-2 | `openayane.toml` configuration loader | `phase5/issue-45-config-loader` | Configuration fixes safe defaults before adapters or API surfaces consume operational settings. |
+| 3 | #49 / P5-6 | audit inspect and relation inspect commands | `phase5/issue-49-audit-relation-inspect` | Early observability makes later Phase 5 changes easier to audit and debug. |
+| 4 | #47 / P5-4 | adapter protocol and filesystem adapter MVP | `phase5/issue-47-adapter-filesystem` | Adapter boundaries should be fixed before implementing the GitHub-specific adapter. |
+| 5 | #48 / P5-5 | GitHub PR review adapter MVP | `phase5/issue-48-github-pr-adapter` | The GitHub adapter should reuse the generic adapter protocol and remain non-posting by default. |
+| 6 | #50 / P5-7 | schema / fixture / golden regression commands | `phase5/issue-50-schema-golden-regression` | Regression should lock behavior after initial CLI and adapter outputs exist. |
+| 7 | #53 / P5-8 | performance measurement harness | `phase5/issue-53-performance-harness` | Performance measurement is meaningful after core operational paths are present. |
+| 8 | #54 / P5-9 | release and compatibility policy docs | `phase5/issue-54-release-compat-policy` | Release policy should consolidate the operational surfaces introduced earlier. |
+| 9 | #46 / P5-3 | local-only service/API boundary skeleton | `phase5/issue-46-local-api-skeleton` | The API should follow CLI/config/adapter stabilization to avoid creating an early remote execution surface. |
+
+The service/API boundary is intentionally placed last even though it is listed as P5-3. A local API created before CLI, config, and adapter defaults are stable can accidentally look like an expanded remote execution surface. Phase 5 should first stabilize local invocation and safe defaults.
+
+### 17.1 PR metadata rule
+
+Every Phase 5 PR should include:
+
+```text
+Primary issue: #NN
+Completion type:
+RDE Notes:
+Test plan:
+Non-goals preserved:
+```
+
+### 17.2 Branching exceptions
+
+Combining issues is allowed only when the combined PR remains a skeleton-only change and the PR body names a primary issue plus secondary issues. The only acceptable early exception is:
+
+```text
+phase5/issues-44-45-cli-config-foundation
+```
+
+This combines CLI and config foundations. Prefer separate branches unless implementation friction is high.
+
+## 18. Acceptance criteria for Phase 5 exit
 
 Phase 5 can be considered Operational Pilot Ready when:
 
@@ -585,17 +627,17 @@ Phase 5 can be considered Operational Pilot Ready when:
 - Documentation states all non-goals and safety limits.
 ```
 
-## 18. RDE differential review
+## 19. RDE differential review
 
-### 18.1 Preserved elements
+### 19.1 Preserved elements
 
 Phase 5 preserves the separation among RDE, Policy, Runtime, Human Review, Rollback, Institution Bridge, and AuditLog. It also preserves the Phase 4 rule that institutional decision is not semantic evaluation.
 
-### 18.2 Authorized transformations
+### 19.2 Authorized transformations
 
 The internal library stack is transformed into operational surfaces: CLI, config, API, adapters, regression, and performance harness. This is an authorized operational transformation.
 
-### 18.3 Inferred extensions
+### 19.3 Inferred extensions
 
 The following are inferred extensions:
 
@@ -606,11 +648,12 @@ The following are inferred extensions:
 - GitHub PR review adapter
 - performance report format
 - release compatibility policy
+- issue-specific branch plan
 ```
 
 These extend OpenAyane into operational practice without changing the RDE theory.
 
-### 18.4 Unresolved elements
+### 19.4 Unresolved elements
 
 Unresolved elements:
 
@@ -623,7 +666,7 @@ Unresolved elements:
 - legal/compliance integration
 ```
 
-### 18.5 Drift risks
+### 19.5 Drift risks
 
 Key drift risks:
 
@@ -634,9 +677,10 @@ Key drift risks:
 - GitHub adapter posts blocking reviews by default
 - performance target hides expensive semantic evaluation in core path
 - config enables subprocess/network side effects without explicit audit
+- multi-issue PRs obscure which Issue introduced which operational ΔM
 ```
 
-### 18.6 Next update policy
+### 19.6 Next update policy
 
 When implementing Phase 5:
 
@@ -646,12 +690,20 @@ When implementing Phase 5:
 - implement adapters as evidence producers, not policy bypasses
 - require tests before enabling external side effects
 - document every default that changes policy or runtime behaviour
+- preserve one Issue = one branch = one PR unless explicitly justified
 ```
 
-## 19. Final statement
+## 20. Final statement
 
 Phase 5 is the operationalization layer.
 
 It should make OpenAyane easier to invoke, inspect, configure, integrate, test, and release.
 
 It must not make OpenAyane silently more autonomous, less auditable, or less explicit about institutional responsibility.
+
+## 21. Revision history
+
+| Version | Date | Notes |
+|---|---|---|
+| 0.1 | 2026-05-05 | Initial Phase 5 operational hardening specification. |
+| 0.2 | 2026-05-05 | Added Issue-specific branch plan, execution order, PR metadata rule, and branching exception policy. |
