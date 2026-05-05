@@ -34,7 +34,7 @@ Therefore, every task should be reviewed not only by ordinary quality criteria, 
 
 | Field | Type | Values / Notes |
 |---|---|---|
-| Phase | Single select | Phase 0, Phase 1, Phase 2, Phase 3, Phase 4 |
+| Phase | Single select | Phase 0, Phase 1, Phase 2, Phase 3, Phase 4, Phase 5 |
 | Component | Single select | Docs, RDE Core, RelationStore, AuditLog, Human Review, Execution Gate, Safe Runtime, Tool Gating, Rollback, Semantic Evaluator, CI, Release |
 | Status | Single select | Backlog, Ready, In Progress, In Review, Blocked, Done |
 | Priority | Single select | P0, P1, P2, P3 |
@@ -118,6 +118,20 @@ Suggested filter:
 Component:Docs
 ```
 
+### 4.7 Phase 5 Operational Hardening
+
+Purpose: track the operational layer (CLI, configuration, service/API skeleton, adapters, regression, performance, release policy).
+
+Specification: `docs/50_openayane_rde_phase5_operational_hardening_spec.md`
+
+Suggested filter:
+
+```text
+Phase:Phase 5
+```
+
+Suggested practice: align each issue’s Component and labels with its dominant workload; adapters and API work should explicitly set Evidence Required and Risk.
+
 ## 5. Recommended built-in workflows
 
 Enable these GitHub Projects workflows where available:
@@ -137,6 +151,7 @@ Initial issue groups:
 - Phase 2: persistence, relation state, and audit trace
 - Phase 3: execution governance and safety runtime
 - Phase 4: integration, evaluation, and release hardening
+- Phase 5: operational hardening and ecosystem integration
 
 Phase 3 should be decomposed into:
 
@@ -179,6 +194,7 @@ phase:1
 phase:2
 phase:3
 phase:4
+phase:5
 component:docs
 component:rde-core
 component:relation-store
@@ -213,3 +229,35 @@ Review = RDE difference inspection.
 Project field state = institutional memory of that inspection.
 
 Merge = authorized transformation into the codebase.
+
+## 11. Phase 5: Issue-branch mapping and recommended order
+
+Tracked on GitHub; matches `docs/50_openayane_rde_phase5_operational_hardening_spec.md` §16.
+
+| Issue | Branch name |
+|---|---|
+| [#44](https://github.com/zyx-corporation/openayane-rde/issues/44) | `phase5/issue-44-cli-foundation-skeletons` |
+| [#45](https://github.com/zyx-corporation/openayane-rde/issues/45) | `phase5/issue-45-openayane-toml-config` |
+| [#46](https://github.com/zyx-corporation/openayane-rde/issues/46) | `phase5/issue-46-local-service-api-skeleton` |
+| [#47](https://github.com/zyx-corporation/openayane-rde/issues/47) | `phase5/issue-47-adapter-protocol-fs-mvp` |
+| [#48](https://github.com/zyx-corporation/openayane-rde/issues/48) | `phase5/issue-48-github-pr-adapter-mvp` |
+| [#49](https://github.com/zyx-corporation/openayane-rde/issues/49) | `phase5/issue-49-audit-relation-inspect-commands` |
+| [#50](https://github.com/zyx-corporation/openayane-rde/issues/50) | `phase5/issue-50-schema-fixture-golden-regression-cmds` |
+| [#53](https://github.com/zyx-corporation/openayane-rde/issues/53) | `phase5/issue-53-performance-measurement-harness` |
+| [#54](https://github.com/zyx-corporation/openayane-rde/issues/54) | `phase5/issue-54-release-compatibility-policy-docs` |
+
+Recommended implementation order:
+
+1. #44 CLI foundation
+2. #45 `openayane.toml` loader
+3. #46 Local-only service/API skeleton
+4. #47 Adapter protocol + filesystem MVP
+5. #48 GitHub PR review adapter MVP
+6. #49 Audit/relation inspect commands
+7. #50 Schema/fixture/golden regression commands
+8. #53 Performance measurement harness
+9. #54 Release and compatibility policy docs
+
+To onboard these onto the GitHub Project (recommended name OpenAyane RDE Implementation), add each issue manually and set **Phase = Phase 5**. Workflows from §5 that auto-add issues do not backfill historical issues.
+
+With `gh` authenticated (`gh auth refresh -s read:project -s project`) and the project configured with a **Phase** single-select including **Phase 5**, run `scripts/add_phase5_issues_to_github_project.sh` to add any missing issues and set the Phase field in one step.

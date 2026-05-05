@@ -40,7 +40,7 @@ OpenAyane RDE の実装を、設計意図から実行可能なガバナンスへ
 
 | Field | Type | Values / Notes |
 |---|---|---|
-| Phase | Single select | Phase 0, Phase 1, Phase 2, Phase 3, Phase 4 |
+| Phase | Single select | Phase 0, Phase 1, Phase 2, Phase 3, Phase 4, Phase 5 |
 | Component | Single select | Docs, RDE Core, RelationStore, AuditLog, Human Review, Execution Gate, Safe Runtime, Tool Gating, Rollback, Semantic Evaluator, CI, Release |
 | Status | Single select | Backlog, Ready, In Progress, In Review, Blocked, Done |
 | Priority | Single select | P0, P1, P2, P3 |
@@ -124,6 +124,23 @@ Phase:Phase 3
 Component:Docs
 ```
 
+### 4.7 Phase 5 Operational Hardening
+
+目的: 運用レイヤー（CLI、設定、サービス/API 骨格、アダプタ、回帰検証、パフォーマンス、リリース方針）を追跡する。
+
+参照仕様: `docs/50_openayane_rde_phase5_operational_hardening_spec.md`
+
+推奨 filter:
+
+```text
+Phase:Phase 5
+```
+
+推奨 components（Project の Component と Issue 側ラベルを揃える）:
+
+- Docs / CLI / CI / Release にまたがる作業があるため、`Component` は Issue 単位で最も支配的な項を選択する。
+- アダプタや API 関連は実行制御との境界を明示するために `Evidence Required` と `Risk` を必ずセットする。
+
 ## 5. Recommended built-in workflows
 
 利用可能な場合は、以下の GitHub Projects workflow を有効化する。
@@ -143,6 +160,7 @@ Component:Docs
 - Phase 2: persistence, relation state, and audit trace
 - Phase 3: execution governance and safety runtime
 - Phase 4: integration, evaluation, and release hardening
+- Phase 5: operational hardening and ecosystem integration
 
 Phase 3 は以下に分解する。
 
@@ -185,6 +203,7 @@ phase:1
 phase:2
 phase:3
 phase:4
+phase:5
 component:docs
 component:rde-core
 component:relation-store
@@ -253,3 +272,35 @@ Phase 4 の各 Issue では、原則として次のブランチ名を用いる�
   - `tests`
 - **RDE Notes:** PR 本文に **RDE Notes**（設計意図・差異分類・リスク・レビュー観点）を **必ず** 含める。
 - **マージ後:** 対応する Issue に **completion type** をコメントで残す（マージ完了の制度的記録として）。
+
+## 13. Phase 5: Issue–ブランチ対応と推奨実装順
+
+GitHub Issues（仕様 `docs/50_openayane_rde_phase5_operational_hardening_spec.md` §16 と対応）。
+
+| Issue | ブランチ名 |
+|---|---|
+| [#44](https://github.com/zyx-corporation/openayane-rde/issues/44) | `phase5/issue-44-cli-foundation-skeletons` |
+| [#45](https://github.com/zyx-corporation/openayane-rde/issues/45) | `phase5/issue-45-openayane-toml-config` |
+| [#46](https://github.com/zyx-corporation/openayane-rde/issues/46) | `phase5/issue-46-local-service-api-skeleton` |
+| [#47](https://github.com/zyx-corporation/openayane-rde/issues/47) | `phase5/issue-47-adapter-protocol-fs-mvp` |
+| [#48](https://github.com/zyx-corporation/openayane-rde/issues/48) | `phase5/issue-48-github-pr-adapter-mvp` |
+| [#49](https://github.com/zyx-corporation/openayane-rde/issues/49) | `phase5/issue-49-audit-relation-inspect-commands` |
+| [#50](https://github.com/zyx-corporation/openayane-rde/issues/50) | `phase5/issue-50-schema-fixture-golden-regression-cmds` |
+| [#53](https://github.com/zyx-corporation/openayane-rde/issues/53) | `phase5/issue-53-performance-measurement-harness` |
+| [#54](https://github.com/zyx-corporation/openayane-rde/issues/54) | `phase5/issue-54-release-compatibility-policy-docs` |
+
+推奨実装順（仕様 §17 / §18.6 の運用順に沿った一つの並び）:
+
+1. #44 CLI foundation
+2. #45 Configuration loader（`openayane.toml`）
+3. #46 Local-only service/API skeleton
+4. #47 Adapter protocol + filesystem MVP
+5. #48 GitHub PR review adapter MVP
+6. #49 Audit/relation inspect コマンド
+7. #50 Schema/fixture/golden regression コマンド
+8. #53 Performance measurement harness
+9. #54 Release and compatibility policy docs
+
+GitHub Projects（推奨名「OpenAyane RDE Implementation」）へ転記するときは、上記 Issues をドラッグ追加し、フィールド **`Phase = Phase 5`** をセットする。**自動追加ワークフロー**（§5）は既存 Issues には遡って効かないため、手動での一度の取り込みが必要となる。
+
+ローカルで `gh` に `read:project` と `project` スコープを付けたうえで、リポジトリの `scripts/add_phase5_issues_to_github_project.sh` を実行すると、同一 Project への追加と `Phase = Phase 5` の設定をまとめて行える（プロジェクト側に **`Phase`** 単一選択および **`Phase 5`** オプションがあることが前提）。
