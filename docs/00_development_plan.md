@@ -94,6 +94,8 @@ Phase 5: Operational Hardening and Ecosystem Integration
 Phase 6: Research Evaluation and Public Specification
 ```
 
+Phase 3 出口（L1 境界の固定）および Phase 4 Institution Bridge 初期仕様: [`37_openayane_rde_phase3_exit_report.md`](37_openayane_rde_phase3_exit_report.md)、[`40_openayane_rde_phase4_institution_bridge_spec.md`](40_openayane_rde_phase4_institution_bridge_spec.md)
+
 各Phaseは、前Phaseの成果物を明確に入力として受け取る。特にPhase 1で生成されるPhase1EvaluationResultは、Phase 2以降の中核的な接続点となる。
 
 ## 3. Phase 0: Concept Freeze and Repository Baseline
