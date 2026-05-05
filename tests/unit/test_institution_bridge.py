@@ -8,7 +8,10 @@ from openayane_rde.core.models import (
     ExecutionGateDecision,
     ExecutionGateEvaluation,
     ExecutionTaskContract,
+    RDEResult,
+    RollbackResult,
     ToolCallRisk,
+    ToolExecutionResult,
 )
 from openayane_rde.institution import (
     AuthorityRef,
@@ -92,6 +95,89 @@ def test_build_handoff_preserves_contract_and_audit_chain() -> None:
     assert h.tool_call_id == "tcl_1"
     assert "ae_gate" in h.audit_event_ids
     assert h.gate_decision_id == ev.decision.decision_id
+    assert h.evidence_basis == ["tool_risk_rule", "execution_contract"]
+    assert "[evidence-handoff]" not in h.explanation
+
+
+def test_build_handoff_uses_rde_evidence_basis_when_present() -> None:
+    bridge = DeterministicInstitutionBridge()
+    contract = ExecutionTaskContract(
+        contract_id="etc_rde",
+        source_tool_call_id="tcl_r",
+        agent_id="ag",
+        action_type="network",
+        tool_name="web",
+        external_side_effect_kind="publishing",
+    )
+    rde = RDEResult(
+        contract_id="etc_rde",
+        classification="preserved",
+        risk_level="low",
+        required_action="approve",
+        explanation="ok",
+        evidence_basis=["structural_diff", "semantic_delta"],
+    )
+    decision = ExecutionGateDecision(
+        contract_id="etc_rde",
+        policy_action="approve",
+        reason="ok",
+        risk=ToolCallRisk(risk_level="low", risk_score=0.1),
+        rde_result=rde,
+        audit_event_id="ae_1",
+    )
+    ev = ExecutionGateEvaluation(decision=decision, contract=contract)
+    h = bridge.build_handoff(
+        handoff_id="h_rde",
+        evaluation=ev,
+        explanation="with rde",
+        created_at=_dt(),
+    )
+    assert h.evidence_basis == ["structural_diff", "semantic_delta"]
+    assert h.rde_result_id == rde.result_id
+
+
+def test_build_handoff_no_audit_appends_gap_note() -> None:
+    bridge = DeterministicInstitutionBridge()
+    ev = _minimal_evaluation(audit_event_id=None)
+    h = bridge.build_handoff(
+        handoff_id="h_gap",
+        evaluation=ev,
+        explanation="synthetic path",
+        created_at=_dt(),
+    )
+    assert h.audit_event_ids == []
+    assert "[evidence-handoff]" in h.explanation
+    assert h.evidence_basis == ["tool_risk_rule", "execution_contract"]
+
+
+def test_build_handoff_links_rollback_plan_and_result() -> None:
+    bridge = DeterministicInstitutionBridge()
+    ev = _minimal_evaluation()
+    tex = ToolExecutionResult(
+        contract_id="etc_eval",
+        tool_call_id="tcl_1",
+        status="completed",
+        rollback_plan_id="rbp_9",
+        audit_event_id="ae_exec",
+    )
+    rb = RollbackResult(
+        rollback_plan_id="rbp_9",
+        status="completed",
+        audit_event_id="ae_rb",
+    )
+    h = bridge.build_handoff(
+        handoff_id="h_rb",
+        evaluation=ev,
+        execution_result=tex,
+        rollback_result=rb,
+        explanation="rollback path",
+        created_at=_dt(),
+    )
+    assert h.rollback_plan_id == "rbp_9"
+    assert h.rollback_result_id == rb.rollback_result_id
+    assert "ae_gate" in h.audit_event_ids
+    assert "ae_exec" in h.audit_event_ids
+    assert "ae_rb" in h.audit_event_ids
 
 
 def test_decide_accept_reversible() -> None:

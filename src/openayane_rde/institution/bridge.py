@@ -11,6 +11,8 @@ from openayane_rde.core.ids import new_id
 from openayane_rde.core.models import (
     EvidenceBasis,
     ExecutionGateEvaluation,
+    RDEResult,
+    RollbackResult,
     ToolExecutionResult,
 )
 from openayane_rde.core.time import now_utc
@@ -28,6 +30,18 @@ from openayane_rde.institution.policy import (
     first_matching_rule,
 )
 
+_AUDIT_GAP_HANDOFF_NOTE = (
+    "\n\n[evidence-handoff] audit_event_ids is empty; if gate, execution, review, or "
+    "rollback events were recorded, this is a handoff gap (docs/41 §3.2, §7)."
+)
+
+
+def _gate_evidence_basis(rde_result: RDEResult | None) -> list[EvidenceBasis]:
+    """Resolve evidence_basis per docs/41 when RDE ran vs gate-only path."""
+    if rde_result is not None and rde_result.evidence_basis:
+        return list(rde_result.evidence_basis)
+    return ["tool_risk_rule", "execution_contract"]
+
 
 class DeterministicInstitutionBridge:
     """Match ``InstitutionRule`` and ``ReviewerAuthority`` to produce ``InstitutionalDecision``."""
@@ -41,6 +55,7 @@ class DeterministicInstitutionBridge:
         review_request_id: str | None = None,
         review_decision_id: str | None = None,
         rde_result_id: str | None = None,
+        rollback_result: RollbackResult | None = None,
         extra_audit_event_ids: list[str] | None = None,
         explanation: str,
         created_at: datetime | None = None,
@@ -52,16 +67,27 @@ class DeterministicInstitutionBridge:
             audit_ids.append(ge.audit_event_id)
         if execution_result and execution_result.audit_event_id:
             audit_ids.append(execution_result.audit_event_id)
+        if rollback_result and rollback_result.audit_event_id:
+            audit_ids.append(rollback_result.audit_event_id)
         if extra_audit_event_ids:
             audit_ids.extend(extra_audit_event_ids)
 
-        evidence_basis: list[EvidenceBasis] = []
-        if ge.rde_result and ge.rde_result.evidence_basis:
-            evidence_basis = list(ge.rde_result.evidence_basis)
+        evidence_basis = _gate_evidence_basis(ge.rde_result)
 
         resolved_rde_id = rde_result_id
         if resolved_rde_id is None and ge.rde_result is not None:
             resolved_rde_id = ge.rde_result.result_id
+
+        rollback_plan_id = (
+            execution_result.rollback_plan_id if execution_result else None
+        )
+        rollback_result_id = (
+            rollback_result.rollback_result_id if rollback_result else None
+        )
+
+        expl = explanation
+        if not audit_ids:
+            expl = f"{expl}{_AUDIT_GAP_HANDOFF_NOTE}"
 
         return EvidenceHandoff(
             handoff_id=handoff_id,
@@ -72,9 +98,11 @@ class DeterministicInstitutionBridge:
             review_decision_id=review_decision_id,
             execution_id=execution_result.execution_id if execution_result else None,
             rde_result_id=resolved_rde_id,
+            rollback_plan_id=rollback_plan_id,
+            rollback_result_id=rollback_result_id,
             audit_event_ids=audit_ids,
             evidence_basis=evidence_basis,
-            explanation=explanation,
+            explanation=expl,
             created_at=created_at or now_utc(),
         )
 
