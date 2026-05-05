@@ -1,4 +1,22 @@
-"""SQLite persistence for relation state, execution events, and review (Phase 3)."""
+"""SQLite persistence for relation state, execution events, and review (Phase 3).
+
+Migration from :class:`~openayane_rde.relation.store.JSONRelationStore`
+------------------------------------------------------------------------
+Export the JSON store (same on-disk file used by ``JSONRelationStore``), then call
+``SQLiteRelationStore.import_from_json_file`` targeting a **new** SQLite path.
+The import runs in a single transaction; on failure the database file ends with no partial
+relation rows from that import (the transaction rolls back).
+
+Rollback-safe operational notes
+-------------------------------
+* Keep the JSON snapshot until you have verified reads from SQLite (``get`` / ``load_context``).
+* To replace an existing ``*.sqlite3``, copy it to ``*.sqlite3.bak`` first; restore from backup if
+  post-migration checks fail.
+* Application ``upsert`` calls use one transaction each so ``relation_records`` and
+  ``drift_patterns`` stay consistent on error.
+
+See ``tests/unit/test_relation_store.py`` (parametrized contract tests).
+"""
 
 from __future__ import annotations
 
@@ -178,6 +196,31 @@ class SQLiteRelationStore:
             ).fetchall()
         return [int(r[0]) for r in rows]
 
+    def import_from_json_file(self, json_path: str | Path) -> int:
+        """Load a JSON relation snapshot and upsert all rows in one transaction.
+
+        Returns the number of records imported. Uses :class:`JSONRelationStore` parsing
+        (including legacy key compatibility inside ``load_all``).
+        """
+
+        from openayane_rde.relation.store import JSONRelationStore
+
+        src = JSONRelationStore(json_path)
+        records = src.load_all()
+        self.initialize()
+        if not records:
+            return 0
+        with self._connect() as conn:
+            conn.execute("BEGIN")
+            try:
+                for rec in records.values():
+                    self._upsert_record(conn, rec)
+                conn.execute("COMMIT")
+            except Exception:
+                conn.execute("ROLLBACK")
+                raise
+        return len(records)
+
     def _metadata_pack(self, record: RelationStoreRecord) -> dict[str, Any]:
         meta: dict[str, Any] = {}
         if record.self_report_mismatch_item_count:
@@ -272,101 +315,104 @@ class SQLiteRelationStore:
             updated_at=_parse_iso_datetime(row["updated_at"]),
         )
 
-    def upsert(self, record: RelationStoreRecord) -> None:
-        self.initialize()
+    def _upsert_record(self, conn: sqlite3.Connection, record: RelationStoreRecord) -> None:
         meta = self._metadata_pack(record)
         meta_json = json.dumps(meta)
         updated_iso = record.updated_at.isoformat()
+        cur = conn.execute(
+            """
+            SELECT relation_id, created_at FROM relation_records
+            WHERE subject_id = ? AND object_id = ? AND relation_type = ?
+            """,
+            (record.subject_id, record.object_id, record.relation_type),
+        ).fetchone()
+        rel_id = record.relation_id if cur is None else str(cur["relation_id"])
+        created_iso = updated_iso if cur is None else str(cur["created_at"])
+        if cur is None:
+            conn.execute(
+                """
+                INSERT INTO relation_records (
+                  relation_id, subject_id, object_id, relation_type,
+                  trust, stability, context_affinity, interaction_count,
+                  critical_corruption_count, suspicious_drift_count,
+                  self_report_mismatch_count, review_threshold_adjustment,
+                  last_delta_m, last_audit_event_id, metadata_json,
+                  created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    rel_id,
+                    record.subject_id,
+                    record.object_id,
+                    record.relation_type,
+                    record.trust,
+                    record.stability,
+                    record.context_affinity,
+                    record.interaction_count,
+                    record.critical_corruption_count,
+                    record.suspicious_drift_count,
+                    record.self_report_mismatch_count,
+                    record.review_threshold_adjustment,
+                    record.last_delta_m,
+                    record.last_audit_event_id,
+                    meta_json,
+                    created_iso,
+                    updated_iso,
+                ),
+            )
+        else:
+            conn.execute(
+                """
+                UPDATE relation_records SET
+                  trust = ?, stability = ?, context_affinity = ?, interaction_count = ?,
+                  critical_corruption_count = ?, suspicious_drift_count = ?,
+                  self_report_mismatch_count = ?, review_threshold_adjustment = ?,
+                  last_delta_m = ?, last_audit_event_id = ?, metadata_json = ?,
+                  updated_at = ?
+                WHERE relation_id = ?
+                """,
+                (
+                    record.trust,
+                    record.stability,
+                    record.context_affinity,
+                    record.interaction_count,
+                    record.critical_corruption_count,
+                    record.suspicious_drift_count,
+                    record.self_report_mismatch_count,
+                    record.review_threshold_adjustment,
+                    record.last_delta_m,
+                    record.last_audit_event_id,
+                    meta_json,
+                    updated_iso,
+                    rel_id,
+                ),
+            )
+        conn.execute("DELETE FROM drift_patterns WHERE relation_id = ?", (rel_id,))
+        for dp in record.drift_patterns:
+            conn.execute(
+                """
+                INSERT INTO drift_patterns (
+                  pattern_id, relation_id, kind, count, severity,
+                  examples_json, last_seen_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    dp.pattern_id,
+                    rel_id,
+                    dp.kind,
+                    dp.count,
+                    dp.severity,
+                    json.dumps(dp.examples),
+                    dp.last_seen_at.isoformat(),
+                ),
+            )
+
+    def upsert(self, record: RelationStoreRecord) -> None:
+        self.initialize()
         with self._connect() as conn:
             conn.execute("BEGIN")
             try:
-                cur = conn.execute(
-                    """
-                    SELECT relation_id, created_at FROM relation_records
-                    WHERE subject_id = ? AND object_id = ? AND relation_type = ?
-                    """,
-                    (record.subject_id, record.object_id, record.relation_type),
-                ).fetchone()
-                rel_id = record.relation_id if cur is None else str(cur["relation_id"])
-                created_iso = updated_iso if cur is None else str(cur["created_at"])
-                if cur is None:
-                    conn.execute(
-                        """
-                        INSERT INTO relation_records (
-                          relation_id, subject_id, object_id, relation_type,
-                          trust, stability, context_affinity, interaction_count,
-                          critical_corruption_count, suspicious_drift_count,
-                          self_report_mismatch_count, review_threshold_adjustment,
-                          last_delta_m, last_audit_event_id, metadata_json,
-                          created_at, updated_at
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        """,
-                        (
-                            rel_id,
-                            record.subject_id,
-                            record.object_id,
-                            record.relation_type,
-                            record.trust,
-                            record.stability,
-                            record.context_affinity,
-                            record.interaction_count,
-                            record.critical_corruption_count,
-                            record.suspicious_drift_count,
-                            record.self_report_mismatch_count,
-                            record.review_threshold_adjustment,
-                            record.last_delta_m,
-                            record.last_audit_event_id,
-                            meta_json,
-                            created_iso,
-                            updated_iso,
-                        ),
-                    )
-                else:
-                    conn.execute(
-                        """
-                        UPDATE relation_records SET
-                          trust = ?, stability = ?, context_affinity = ?, interaction_count = ?,
-                          critical_corruption_count = ?, suspicious_drift_count = ?,
-                          self_report_mismatch_count = ?, review_threshold_adjustment = ?,
-                          last_delta_m = ?, last_audit_event_id = ?, metadata_json = ?,
-                          updated_at = ?
-                        WHERE relation_id = ?
-                        """,
-                        (
-                            record.trust,
-                            record.stability,
-                            record.context_affinity,
-                            record.interaction_count,
-                            record.critical_corruption_count,
-                            record.suspicious_drift_count,
-                            record.self_report_mismatch_count,
-                            record.review_threshold_adjustment,
-                            record.last_delta_m,
-                            record.last_audit_event_id,
-                            meta_json,
-                            updated_iso,
-                            rel_id,
-                        ),
-                    )
-                conn.execute("DELETE FROM drift_patterns WHERE relation_id = ?", (rel_id,))
-                for dp in record.drift_patterns:
-                    conn.execute(
-                        """
-                        INSERT INTO drift_patterns (
-                          pattern_id, relation_id, kind, count, severity,
-                          examples_json, last_seen_at
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?)
-                        """,
-                        (
-                            dp.pattern_id,
-                            rel_id,
-                            dp.kind,
-                            dp.count,
-                            dp.severity,
-                            json.dumps(dp.examples),
-                            dp.last_seen_at.isoformat(),
-                        ),
-                    )
+                self._upsert_record(conn, record)
                 conn.execute("COMMIT")
             except Exception:
                 conn.execute("ROLLBACK")
