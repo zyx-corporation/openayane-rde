@@ -63,6 +63,8 @@ Matching uses rule-based substring checks plus a small built-in **synonym map** 
 
 `openayane_rde.institution` defines **typed skeletons** for `InstitutionRule`, `AuthorityRef`, `ReviewerAuthority`, `EvidenceHandoff`, `InstitutionalDecision`, and `HaltProvenance`, aligned with `docs/40_openayane_rde_phase4_institution_bridge_spec.md`. They establish boundaries for the Institution Bridge only — **not** production authority infrastructure (no PoP-UID, cryptographic proof, or external IdP). Bridge records reference Phase 3 evidence by ID; they are **not** execution results or proofs of authority. `HaltProvenance` keeps policy halt and RDE halt distinguishable in serialized audit payloads.
 
+`DeterministicInstitutionBridge` (`build_handoff` / `decide`) is an MVP, rule-based mapper from `EvidenceHandoff` to `InstitutionalDecision` — inspectable and deterministic, not an LLM.
+
 ## Licensing
 
 Paper and documentation are licensed under CC BY 4.0 unless otherwise noted. Code and build scripts are licensed under the MIT License.
