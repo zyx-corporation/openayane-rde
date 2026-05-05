@@ -11,6 +11,9 @@ import sys
 from pathlib import Path
 from typing import Callable, Literal, cast
 
+from pydantic import ValidationError
+
+from openayane_rde.config import load_openayane_config, normalize_config_paths
 from openayane_rde.core.models import GeneratorOutput, ModelInfo, SelfReport, TaskContract
 from openayane_rde.runtime._flow import run_phase1_evaluation, run_structural_diff
 
@@ -126,6 +129,29 @@ def cmd_diff(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_config_validate(args: argparse.Namespace) -> int:
+    cfg_path = Path(args.config)
+    if not cfg_path.is_file():
+        return _die(f"Not a file: {cfg_path}", 2)
+    try:
+        cfg = load_openayane_config(cfg_path)
+        normalized = normalize_config_paths(cfg, cfg_path)
+    except ValueError as exc:
+        return _die(str(exc), 2)
+    except ValidationError as exc:
+        if args.json:
+            err_payload = {"ok": False, "errors": exc.errors(include_url=False)}
+            print(json.dumps(err_payload, ensure_ascii=False))
+        else:
+            print(str(exc), file=sys.stderr)
+        return 1
+    if args.json:
+        print(json.dumps({"ok": True, "config": normalized.model_dump()}, ensure_ascii=False))
+    else:
+        print(f"OK: {cfg_path.resolve()}")
+    return 0
+
+
 def cmd_stub(name: str, args: argparse.Namespace) -> int:
     if args.json:
         print(json.dumps({"command": name, "status": "not_implemented"}, ensure_ascii=False))
@@ -189,6 +215,17 @@ def build_parser() -> argparse.ArgumentParser:
     pd.add_argument("--required-json-fields", nargs="*", default=None)
     pd.add_argument("--json", action="store_true")
     pd.set_defaults(_handler=cmd_diff)
+
+    pcfg = sub.add_parser("config", help="Configuration commands.")
+    pcfg_sub = pcfg.add_subparsers(dest="_config_sub", required=True)
+    pcfg_val = pcfg_sub.add_parser("validate", help="Load and validate openayane.toml.")
+    pcfg_val.add_argument(
+        "--config",
+        default="openayane.toml",
+        help="Path to openayane.toml (default: ./openayane.toml).",
+    )
+    pcfg_val.add_argument("--json", action="store_true")
+    pcfg_val.set_defaults(_handler=cmd_config_validate)
 
     pa = sub.add_parser("audit", help="Audit log commands.")
     pa_sub = pa.add_subparsers(dest="_audit_sub", required=True)

@@ -22,6 +22,7 @@ def _repo_src() -> Path:
     [
         ["evaluate", "--help"],
         ["diff", "--help"],
+        ["config", "validate", "--help"],
         ["audit", "inspect", "--help"],
         ["relation", "inspect", "--help"],
         ["policy", "check", "--help"],
@@ -114,6 +115,17 @@ def test_parser_version() -> None:
     with pytest.raises(SystemExit) as exc:
         p.parse_args(["--version"])
     assert exc.value.code == 0
+
+
+def test_config_validate_cli(tmp_path: Path) -> None:
+    cfg = tmp_path / "openayane.toml"
+    cfg.write_text('[profile]\nname = "t"\n', encoding="utf-8")
+    assert main(["config", "validate", "--config", str(cfg)]) == 0
+
+
+def test_config_validate_cli_missing_file(tmp_path: Path) -> None:
+    missing = tmp_path / "missing.toml"
+    assert main(["config", "validate", "--config", str(missing)]) == 2
 
 
 def test_openayane_rde_console_script_help() -> None:
