@@ -460,6 +460,14 @@ class PolicyDecision(BaseModel):
     rde_result_id: str
     action: PolicyActionKind
     rationale: str
+    institution_rule_id: str | None = None
+    institutional_rationale: str | None = Field(
+        default=None,
+        description=(
+            "Institution-layer supplement only; RDE evaluation remains in RDEResult. "
+            "Do not treat as a substitute for rde_result.classification."
+        ),
+    )
     metadata: dict[str, Any] = Field(default_factory=dict)
     created_at: datetime = Field(default_factory=now_utc)
 

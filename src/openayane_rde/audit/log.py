@@ -11,6 +11,7 @@ from openayane_rde.core.models import (
     AuditActionKind,
     AuditEvent,
     ExecutionGateDecision,
+    PolicyDecision,
     ReviewDecision,
     ReviewRequest,
     RollbackPlan,
@@ -190,3 +191,30 @@ def append_audit_event(path: str | Path, event: AuditEvent) -> AuditEvent:
 
     append_event(path, event)
     return event
+
+
+def audit_event_policy_decision(
+    decision: PolicyDecision,
+    *,
+    rde_classification: str,
+) -> AuditEvent:
+    """Append-only shape for policy decisions with explicit RDE vs institution payload split."""
+
+    return AuditEvent(
+        actor="policy",
+        action="make_policy_decision",
+        task_contract_id=decision.contract_id,
+        rde_result_id=decision.rde_result_id,
+        policy_decision_id=decision.decision_id,
+        explanation=decision.rationale,
+        payload={
+            "policy_action": decision.action,
+            "rde_classification": rde_classification,
+            "institution_rule_id": decision.institution_rule_id,
+            "institutional_rationale": decision.institutional_rationale,
+            "layer_note": (
+                "rde_result carries semantic classification; institution_rule_id binds "
+                "organizational rules without replacing RDE."
+            ),
+        },
+    )
