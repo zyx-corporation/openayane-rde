@@ -96,6 +96,8 @@ Phase 6: Research Evaluation and Public Specification
 
 Phase 3 出口（L1 境界の固定）および Phase 4 Institution Bridge 初期仕様: [`37_openayane_rde_phase3_exit_report.md`](37_openayane_rde_phase3_exit_report.md)、[`40_openayane_rde_phase4_institution_bridge_spec.md`](40_openayane_rde_phase4_institution_bridge_spec.md)
 
+Phase 5（運用化・CLI / 設定 / アダプタ / 回帰など）の詳細・Issue 分割・**推奨実行順**: [`50_openayane_rde_phase5_operational_hardening_spec.md`](50_openayane_rde_phase5_operational_hardening_spec.md)（GitHub [#44](https://github.com/zyx-corporation/openayane-rde/issues/44) 〜 [#54](https://github.com/zyx-corporation/openayane-rde/issues/54)）。着手は同文書 §17 に従い、通常 **#44（CLI）を最初**とする。
+
 各Phaseは、前Phaseの成果物を明確に入力として受け取る。特にPhase 1で生成されるPhase1EvaluationResultは、Phase 2以降の中核的な接続点となる。
 
 ## 3. Phase 0: Concept Freeze and Repository Baseline
@@ -573,6 +575,17 @@ src/openayane_rde/core/models.py PolicyDecision
 ```
 
 ## 8. Phase 5: Operational Hardening and Ecosystem Integration
+
+### 8.0 着手前提（リポジトリ現状）
+
+```text
+- Phase 1〜4 のコア（RDE / Policy / Runtime / Review / Rollback / Institution Bridge）と、
+  Phase 1 フロー・実行ゲートへの制度オプション統合は main に取り込み済み。
+- Phase 5 は「呼び出し・設定・アダプタ・回帰・性能・リリース規律」の層。スコープ・非目標・出口条件は
+  docs/50_openayane_rde_phase5_operational_hardening_spec.md を正とする。
+- 作業 Issue は #44（P5-1）〜 #54（P5-9）。原則 1 Issue = 1 branch = 1 PR。
+  実行順は docs/50 §17（API / #46 は意図的に最後）。
+```
 
 ### 8.1 目的
 
