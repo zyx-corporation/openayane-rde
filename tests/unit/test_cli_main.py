@@ -9,8 +9,13 @@ from pathlib import Path
 
 import pytest
 
+from openayane_rde.audit.log import append_event
 from openayane_rde.cli.main import build_parser, main
 from openayane_rde.contract.builder import build_contract
+from openayane_rde.core.models import RelationStoreRecord
+from openayane_rde.relation.store import JSONRelationStore
+
+from tests.unit.test_audit_log import make_event
 
 
 def _repo_src() -> Path:
@@ -126,6 +131,32 @@ def test_config_validate_cli(tmp_path: Path) -> None:
 def test_config_validate_cli_missing_file(tmp_path: Path) -> None:
     missing = tmp_path / "missing.toml"
     assert main(["config", "validate", "--config", str(missing)]) == 2
+
+
+def test_audit_inspect_cli_ok(tmp_path: Path) -> None:
+    log = tmp_path / "a.jsonl"
+    append_event(log, make_event())
+    assert main(["audit", "inspect", "--log", str(log)]) == 0
+
+
+def test_audit_inspect_cli_malformed_is_nonzero(tmp_path: Path) -> None:
+    log = tmp_path / "bad.jsonl"
+    log.write_text("{not json\n", encoding="utf-8")
+    assert main(["audit", "inspect", "--log", str(log)]) == 1
+
+
+def test_audit_inspect_via_openayane_config(tmp_path: Path) -> None:
+    log = tmp_path / "a.jsonl"
+    append_event(log, make_event())
+    cfg = tmp_path / "openayane.toml"
+    cfg.write_text(f'[audit]\npath = "{log.as_posix()}"\n', encoding="utf-8")
+    assert main(["audit", "inspect", "--config", str(cfg)]) == 0
+
+
+def test_relation_inspect_cli_json(tmp_path: Path) -> None:
+    p = tmp_path / "rel.json"
+    JSONRelationStore(p).upsert(RelationStoreRecord(subject_id="s", object_id="o"))
+    assert main(["relation", "inspect", "--backend", "json", "--path", str(p)]) == 0
 
 
 def test_openayane_rde_console_script_help() -> None:
