@@ -94,7 +94,7 @@ Phase 5: Operational Hardening and Ecosystem Integration
 Phase 6: Research Evaluation and Public Specification
 ```
 
-Phase 3 出口（L1 境界の固定）および Phase 4 Institution Bridge 初期仕様: [`37_openayane_rde_phase3_exit_report.md`](37_openayane_rde_phase3_exit_report.md)、[`40_openayane_rde_phase4_institution_bridge_spec.md`](40_openayane_rde_phase4_institution_bridge_spec.md)
+Phase 3 出口（L1 境界の固定）および Phase 4 Institution Bridge 初期仕様: [`37_openayane_rde_phase3_exit_report.md`](37_openayane_rde_phase3_exit_report.md)、[`40_openayane_rde_phase4_institution_bridge_spec.md`](40_openayane_rde_phase4_institution_bridge_spec.md)、[`41_openayane_rde_phase3_to_phase4_evidence_handoff.md`](41_openayane_rde_phase3_to_phase4_evidence_handoff.md)。**Phase 4 実装完了の総括（出口記録）:** [`43_openayane_rde_phase4_completion_report.md`](43_openayane_rde_phase4_completion_report.md)。
 
 Phase 5（運用化・CLI / 設定 / アダプタ / 回帰など）の詳細・Issue 分割・**推奨実行順**: [`50_openayane_rde_phase5_operational_hardening_spec.md`](50_openayane_rde_phase5_operational_hardening_spec.md)（GitHub [#44](https://github.com/zyx-corporation/openayane-rde/issues/44) 〜 [#54](https://github.com/zyx-corporation/openayane-rde/issues/54)）。着手は同文書 §17 に従い、通常 **#44（CLI）を最初**とする。
 
