@@ -143,6 +143,27 @@ def test_golden_run_cli_smoke() -> None:
     assert main(["golden", "run", "--repo-root", str(repo)]) == 0
 
 
+def test_perf_cli_smoke(tmp_path: Path) -> None:
+    repo = Path(__file__).resolve().parents[2]
+    out = tmp_path / "perf_out.json"
+    assert (
+        main(
+            [
+                "perf",
+                "run",
+                "--repo-root",
+                str(repo),
+                "--iterations",
+                "2",
+                "--report",
+                str(out),
+            ]
+        )
+        == 0
+    )
+    assert out.is_file()
+
+
 def test_audit_inspect_cli_ok(tmp_path: Path) -> None:
     log = tmp_path / "a.jsonl"
     append_event(log, make_event())

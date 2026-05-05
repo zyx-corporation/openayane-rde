@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sqlite3
 import sys
 from pathlib import Path
@@ -20,6 +21,7 @@ from openayane_rde.cli.regression import (
     validate_repo_schemas_and_fixtures,
 )
 from openayane_rde.config import load_openayane_config, normalize_config_paths
+from openayane_rde.perf.harness import run_perf_harness
 from openayane_rde.core.models import GeneratorOutput, ModelInfo, SelfReport, TaskContract
 from openayane_rde.runtime._flow import run_phase1_evaluation, run_structural_diff
 
@@ -268,6 +270,24 @@ def cmd_golden_run(args: argparse.Namespace) -> int:
     return code
 
 
+def cmd_perf_run(args: argparse.Namespace) -> int:
+    root = Path(args.repo_root).resolve()
+    report_path = Path(args.report) if args.report else None
+    if report_path is not None and not report_path.is_absolute():
+        report_path = root / report_path
+    prev = Path.cwd()
+    os.chdir(root)
+    try:
+        rep = run_perf_harness(iterations=args.iterations, report_path=report_path)
+    finally:
+        os.chdir(prev)
+    if args.json:
+        print(json.dumps(rep, ensure_ascii=False))
+    else:
+        print(f"Performance report: {rep.get('report_path', '')}")
+    return 0
+
+
 def cmd_stub(name: str, args: argparse.Namespace) -> int:
     if args.json:
         print(json.dumps({"command": name, "status": "not_implemented"}, ensure_ascii=False))
@@ -421,9 +441,28 @@ def build_parser() -> argparse.ArgumentParser:
 
     pperf = sub.add_parser("perf", help="Performance harness commands.")
     pperf_sub = pperf.add_subparsers(dest="_perf_sub", required=True)
-    pperf_run = pperf_sub.add_parser("run", help="Latency measurements (stub).")
+    pperf_run = pperf_sub.add_parser(
+        "run",
+        help="Local core-path timings → .openayane/reports/perf_YYYYMMDD.json",
+    )
+    pperf_run.add_argument(
+        "--repo-root",
+        default=".",
+        help="Run benchmarks with this working directory (default: .).",
+    )
+    pperf_run.add_argument(
+        "--iterations",
+        type=int,
+        default=40,
+        help="Iterations per benchmark (default 40).",
+    )
+    pperf_run.add_argument(
+        "--report",
+        default=None,
+        help="Optional output JSON path (default: .openayane/reports/perf_<date>.json).",
+    )
     pperf_run.add_argument("--json", action="store_true")
-    pperf_run.set_defaults(_handler=_stub_handler("perf run"))
+    pperf_run.set_defaults(_handler=cmd_perf_run)
 
     return p
 
