@@ -20,10 +20,14 @@ from openayane_rde.core.models import (
     AuditEvent,
     ConstraintViolation,
     DiffNode,
+    DocumentFragilityProfile,
+    DriftPattern,
     GeneratorOutput,
+    GeneratorReliabilityProfile,
     ModelInfo,
     ProtectedChange,
     RDEResult,
+    RelationStoreRecord,
     SelfReport,
     SelfReportMismatch,
     StructuralDiff,
@@ -351,5 +355,87 @@ def test_audit_event_missing_required_field_rejected() -> None:
     ev = AuditEvent(actor="rde", action="evaluate_rde", explanation="test")
     data = json.loads(ev.model_dump_json())
     del data["explanation"]
+    with pytest.raises(jsonschema.ValidationError):
+        validate(data, schema)
+
+
+# ---------------------------------------------------------------------------
+# RelationStoreRecord
+# ---------------------------------------------------------------------------
+
+
+def test_relation_store_schema_conformance_minimal() -> None:
+    record = RelationStoreRecord(subject_id="gen_1", object_id="doc_1")
+    schema = load_schema("relation_store.schema.json")
+    data = json.loads(record.model_dump_json())
+    validate(data, schema)
+
+
+def test_relation_store_schema_conformance_full() -> None:
+    record = RelationStoreRecord(
+        subject_id="gen_1",
+        object_id="doc_1",
+        relation_type="generator-document",
+        trust=0.55,
+        stability=0.6,
+        context_affinity=0.5,
+        interaction_count=12,
+        critical_corruption_count=0,
+        suspicious_drift_count=2,
+        self_report_mismatch_count=1,
+        self_report_mismatch_item_count=3,
+        drift_patterns=[
+            DriftPattern(
+                kind="self_report_mismatch",
+                count=3,
+                severity="high",
+                examples=["Generator claimed citations were unchanged."],
+            )
+        ],
+        generator_reliability_profile=GeneratorReliabilityProfile(
+            generator_id="gen_1",
+            total_outputs=12,
+            self_report_mismatch_count=1,
+            suspicious_drift_count=2,
+            reliability_score=0.7,
+        ),
+        document_fragility_profile=DocumentFragilityProfile(
+            document_id="doc_1",
+            total_edits=12,
+            protected_change_count=2,
+            fragility_score=0.25,
+        ),
+        review_threshold_adjustment=0.1,
+        last_delta_m=0.35,
+        last_audit_event_id="audit_1",
+    )
+    schema = load_schema("relation_store.schema.json")
+    data = json.loads(record.model_dump_json())
+    validate(data, schema)
+
+
+def test_relation_store_invalid_relation_type_rejected() -> None:
+    schema = load_schema("relation_store.schema.json")
+    record = RelationStoreRecord(subject_id="gen_1", object_id="doc_1")
+    data = json.loads(record.model_dump_json())
+    data["relation_type"] = "invalid-relation"
+    with pytest.raises(jsonschema.ValidationError):
+        validate(data, schema)
+
+
+def test_relation_store_trust_out_of_range_rejected() -> None:
+    schema = load_schema("relation_store.schema.json")
+    record = RelationStoreRecord(subject_id="gen_1", object_id="doc_1")
+    data = json.loads(record.model_dump_json())
+    data["trust"] = 1.5
+    with pytest.raises(jsonschema.ValidationError):
+        validate(data, schema)
+
+
+def test_relation_store_extra_field_rejected() -> None:
+    schema = load_schema("relation_store.schema.json")
+    record = RelationStoreRecord(subject_id="gen_1", object_id="doc_1")
+    data = json.loads(record.model_dump_json())
+    data["semantic_validity"] = True
     with pytest.raises(jsonschema.ValidationError):
         validate(data, schema)
