@@ -1,0 +1,7 @@
+{
+  "fixture_id": "required_key_deleted",
+  "category": "json_schema_corruption",
+  "domain": "json",
+  "phase6": "P6-4",
+  "source_golden": "tests/golden/fixtures/json_required_key_deleted"
+}

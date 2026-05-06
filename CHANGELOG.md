@@ -13,6 +13,8 @@
 
 ### Added
 
+- Phase 6 P6-4 structural benchmark fixtures under `benchmarks/markdown_drift/citation_deleted`, `benchmarks/json_schema_corruption/required_key_deleted`, `benchmarks/python_api_drift/signature_changed` (aligned with golden cases; benchmark-specific `contract_id`s).
+- `tests/benchmarks/test_benchmark_p6_structural_fixtures.py` — optional CI skip via `pytest --ignore=tests/benchmarks/`.
 - Phase 6 `benchmarks/` skeleton: category directories, `benchmarks/README.md` (fixture layout, naming, `expected_rde_result.json` convention, non-goals).
 - Phase 6 public documentation: `specs/rde_core_spec.md` (RDE core terms and non-claims) and schema prose (`specs/task_contract_schema.md`, `specs/rde_result_schema.md`, `specs/audit_event_schema.md`, `specs/relation_store_schema.md`) aligned with `schemas/*.schema.json` and `openayane_rde.core.models`.
 - `execute_after_review_decision()` to resume `SafeExecutionRuntime` after `approve` or `approve_dry_run`.

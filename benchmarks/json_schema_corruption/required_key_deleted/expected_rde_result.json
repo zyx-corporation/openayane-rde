@@ -1,0 +1,6 @@
+{
+  "classification": "critical_corruption",
+  "risk_level": "critical",
+  "required_action": "halt",
+  "notes": "Required field `status` removed; JsonDiff + contract metadata required_fields."
+}

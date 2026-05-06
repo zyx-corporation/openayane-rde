@@ -1,0 +1,7 @@
+{
+  "fixture_id": "citation_deleted",
+  "category": "markdown_drift",
+  "domain": "markdown",
+  "phase6": "P6-4",
+  "source_golden": "tests/golden/fixtures/markdown_citation_deleted"
+}
