@@ -739,6 +739,8 @@ OpenAyane RDEは、安全性・監査性に関わるため、TDD（Test Driven D
 5. regressionをCIで固定する
 ```
 
+**RDE観点でのテスト設計・golden の意味・分類とPolicyの分離などの詳細:** [`63_openayane_rde_testing_policy.md`](63_openayane_rde_testing_policy.md)（GitHub [#99](https://github.com/zyx-corporation/openayane-rde/issues/99)）。
+
 ### 10.2 Schema同期を維持する
 
 Pydantic model、JSON schema、fixture、documentationの不整合を避けるため、schema同期テストを継続する。
