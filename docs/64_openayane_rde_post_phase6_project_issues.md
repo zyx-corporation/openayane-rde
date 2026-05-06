@@ -228,7 +228,24 @@ B2 は B1 に依存
 B6 は B4/B5 より先に着手可能（論文と既存 baseline の同期）
 ```
 
-## 5. 文書履歴
+## 5. 重要マイルストーン記録
+
+### M-RDE-G0: RDE pre-gateway integration baseline
+
+本マイルストーンは、Gateway 連携前段の RDE 統合境界を固定する。
+
+**完了条件:**
+
+```text
+- /v1/evaluate の request/response/error contract 固定
+- Phase 1 structural diff evaluation が opt-in で動作
+- RDE result schema が Gateway から読める
+- recommended_action は返すが未執行
+- benchmark report と known_limitations が更新済み
+- rde-pre-gateway-integration-v0.2.0 タグを作成
+```
+
+## 6. 文書履歴
 
 | Version | Date | Note |
 |---------|------|------|
