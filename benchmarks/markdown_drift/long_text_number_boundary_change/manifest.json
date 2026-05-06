@@ -1,0 +1,8 @@
+{
+  "fixture_id": "long_text_number_boundary_change",
+  "category": "markdown_drift",
+  "domain": "markdown",
+  "phase6": "P6-4",
+  "source_golden": "none",
+  "tags": ["stress", "boundary_value", "long_text"]
+}
