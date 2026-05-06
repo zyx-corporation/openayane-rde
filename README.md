@@ -49,6 +49,8 @@ After `pip install -e '.[dev,markdown]'`, CI also runs **`openayane-rde schema v
 
 ## Contributing and releases
 
+Use [`CONTRIBUTING.md`](CONTRIBUTING.md) as the primary PR checklist.
+
 - **Tests and RDE vs Policy:** read [`docs/63_openayane_rde_testing_policy.md`](docs/63_openayane_rde_testing_policy.md) before changing golden expectations or classification tests.
 - **Compatibility and changelog:** follow [`docs/51_openayane_rde_release_compatibility_policy.md`](docs/51_openayane_rde_release_compatibility_policy.md) and update [`CHANGELOG.md`](CHANGELOG.md) when your PR changes user-visible behavior, CLI, schemas, or public specs.
 
