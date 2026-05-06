@@ -73,6 +73,67 @@ Optional:
 | `README.md` | Human notes: intent, threat model, citation to paper/spec section. |
 | `manifest.json` | Machine metadata (e.g. `domain`, `tags`, `phase6_issue`). |
 
+## Adding a new benchmark fixture (protocol)
+
+This section is the operational protocol for extending the benchmark suite. The harness is designed to minimize “registration” steps: discovery is file-based.
+
+### 1) Choose category and fixture id
+
+- Create a directory under `benchmarks/<category>/<fixture_id>/`.
+- **`fixture_id`** should be stable `snake_case` and unique within the category.
+
+### 2) Add the required files
+
+At minimum (single-case fixtures):
+
+```text
+benchmarks/<category>/<fixture_id>/
+  task_contract.json
+  original.<ext>
+  modified.<ext>
+  expected_rde_result.json
+  # optional: self_report.json
+```
+
+Notes:
+
+- `expected_rde_result.json` MUST include both **`classification`** and **`required_action`** (see `benchmarks/evaluate.py`).
+- For JSON fixtures, set `TaskContract.metadata.required_fields` when you need required-key checks; `evaluate.py` passes them into `JsonDiff`.
+
+### 3) Long-chain fixtures
+
+If the fixture is long-chain, add a `chain.json` at the fixture root and keep step directories under it:
+
+```text
+benchmarks/<category>/<fixture_id>/
+  task_contract.json
+  original.<ext>
+  chain.json
+  step_01/modified.<ext>
+  step_01/expected_rde_result.json
+  step_02/modified.<ext>
+  step_02/expected_rde_result.json
+  ...
+```
+
+Discovery rule (implementation): `evaluate.py` treats any directory with `chain.json` as a long-chain fixture and scores each `steps[]` entry as an evaluation unit.
+
+### 4) Run the harness locally (and keep it reproducible)
+
+From the repository root:
+
+```bash
+python benchmarks/evaluate.py --repo-root .
+```
+
+- If you add a new fixture and it fails, fix either the implementation or the expectations. Do **not** “green the test” by silently weakening the benchmark’s intent.
+- If you update expectations, document the intended meaning change (ΔM) in the fixture `README.md` and/or the PR description.
+
+### 5) When to update `METRICS.md`
+
+- **Update `benchmarks/METRICS.md`** only when you introduce a new metric or change how metrics are computed/aggregated.
+- Adding or adjusting fixtures without changing metric definitions usually does not require a metrics document update.
+
 ## Expected output convention (`expected_rde_result.json`)
 
 Minimum fields used by Phase 6 scoring (extend as needed; CI golden tests may require more):
