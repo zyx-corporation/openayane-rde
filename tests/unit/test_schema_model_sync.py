@@ -18,6 +18,7 @@ from openayane_rde.core.models import (
     ChangeType,
     ContractMode,
     DiffDomain,
+    DriftPatternKind,
     GeneratorOutput,
     OutputType,
     PolicyActionKind,
@@ -25,6 +26,8 @@ from openayane_rde.core.models import (
     ProviderKind,
     RDEClassification,
     RDEResult,
+    RelationStoreRecord,
+    RelationType,
     RequiredAction,
     RiskLevel,
     StructuralDiff,
@@ -83,6 +86,11 @@ def test_rde_result_schema_required_are_fields() -> None:
 def test_audit_event_schema_required_are_fields() -> None:
     req = _required_props("audit_event.schema.json")
     assert req <= _model_field_names(AuditEvent)
+
+
+def test_relation_store_schema_required_are_fields() -> None:
+    req = _required_props("relation_store.schema.json")
+    assert req <= _model_field_names(RelationStoreRecord)
 
 
 def test_enum_task_contract_mode_matches_schema() -> None:
@@ -157,6 +165,27 @@ def test_enum_change_type_in_structural_diff_defs_matches_schema() -> None:
     assert _schema_enum_at(
         data, ["$defs", "protected_change", "properties", "change_type", "enum"]
     ) == set(get_args(ChangeType))
+
+
+def test_enum_relation_type_matches_schema() -> None:
+    data = _load_schema("relation_store.schema.json")
+    assert _schema_enum_at(data, ["properties", "relation_type", "enum"]) == set(
+        get_args(RelationType)
+    )
+
+
+def test_enum_drift_pattern_kind_matches_schema() -> None:
+    data = _load_schema("relation_store.schema.json")
+    assert _schema_enum_at(data, ["$defs", "drift_pattern_kind", "enum"]) == set(
+        get_args(DriftPatternKind)
+    )
+
+
+def test_enum_relation_store_risk_level_matches_schema() -> None:
+    data = _load_schema("relation_store.schema.json")
+    assert _schema_enum_at(data, ["$defs", "risk_level", "enum"]) == set(
+        get_args(RiskLevel)
+    )
 
 
 def test_policy_action_literals_match_required_action() -> None:
