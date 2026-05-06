@@ -1,0 +1,9 @@
+{
+  "fixture_id": "safety_framework_cumulative",
+  "comparison_mode": "cumulative_baseline",
+  "description": "Each step compares the same original.md to step_NN/modified.md. Models silent accumulation of protected-element drift ending in multi-signal corruption.",
+  "steps": ["step_01", "step_02", "step_03"],
+  "expected_drift_patterns": ["number_change", "citation_deletion", "citation_weakening"],
+  "source_golden": "tests/golden/fixtures/self_report_mismatch (document body; chain steps are decomposed)",
+  "phase6": "P6-5"
+}

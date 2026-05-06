@@ -1,0 +1,7 @@
+{
+  "classification": "critical_corruption",
+  "risk_level": "critical",
+  "required_action": "halt",
+  "drift_pattern_notes": ["number_change", "citation_weakening", "citation_deletion"],
+  "step_summary": "Compound corruption: numeric shift plus citation stripped to prose (baseline comparison)."
+}

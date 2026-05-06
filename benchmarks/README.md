@@ -1,6 +1,6 @@
 # OpenAyane RDE — Phase 6 benchmarks
 
-Research-oriented, reproducible fixtures for evaluating RDE behaviour. **`tests/golden/`** remains the original regression suite; **`benchmarks/`** is the Phase 6 tree for reports and metrics. Structural P6-4 cases are also checked by `tests/benchmarks/test_benchmark_p6_structural_fixtures.py` (full `pytest` runs it; skip with `pytest --ignore=tests/benchmarks/`).
+Research-oriented, reproducible fixtures for evaluating RDE behaviour. **`tests/golden/`** remains the original regression suite; **`benchmarks/`** is the Phase 6 tree for reports and metrics. **`tests/benchmarks/`** locks P6-4 structural cases, P6-5 long-chain steps, and self-report mismatch (full `pytest` runs them; skip with `pytest --ignore=tests/benchmarks/`).
 
 ## Layout
 
@@ -23,6 +23,15 @@ benchmarks/
 | `python_api_drift/` | `signature_changed` | `suspicious_drift` |
 
 Each case includes `README.md`, `manifest.json` (golden lineage), and the standard file set below.
+
+## Long-chain & self-report fixtures (P6-5)
+
+| Category | `fixture_id` | Notes |
+|----------|--------------|--------|
+| `long_chain_document_corruption/` | `safety_framework_cumulative` | Three steps vs one `original.md` (`cumulative_baseline`); see `chain.json` |
+| `generator_self_report_mismatch/` | `silent_delta_claim` | `self_report.json` contradicts diff; expects mismatch + protected-change rows |
+
+Tests: `test_benchmark_p6_long_chain.py`, `test_benchmark_p6_self_report_mismatch.py`.
 
 Each **fixture** lives in its own directory:
 
@@ -69,19 +78,18 @@ Minimum fields used by Phase 6 scoring (extend as needed; CI golden tests may re
 
 Stricter assertions (full `RDEResult` shape, policy action) are allowed for individual fixtures but are not required for the skeleton.
 
-## Long-chain fixtures (P6-5)
+## Long-chain layout convention
 
 A long-chain case MAY use either:
 
-- **Sequence directories:** `step_01/`, `step_02/`, … each obeying the single-step file list above, **or**
-- **Single directory** with `chain.json` describing ordered paths to child fixture roots (documented when first fixture lands).
-
-Until P6-5 lands, `long_chain_document_corruption/` remains intentionally empty except for this README reference.
+- **Cumulative baseline:** shared `original.md` + `task_contract.json` at the fixture root; each `step_NN/modified.md` is compared to the same baseline (see `safety_framework_cumulative`).
+- **Per-step snapshots:** each step directory is self-contained (`original`, `modified`, contract), or
+- **`chain.json`** at the root documenting `steps` and `comparison_mode`.
 
 ## Relationship to CI golden tests
 
-- **`tests/golden/fixtures/`** — regression-locked by `pytest`; keep in sync philosophically with benchmarks when cases overlap.
-- **`benchmarks/`** — explicit scope for research reports, metrics, and optional evaluation scripts; failures here do not necessarily fail default CI unless wired in P6-6+.
+- **`tests/golden/fixtures/`** — regression-locked by `pytest`; benchmark copies should cite golden lineage in `manifest.json` / `README.md`.
+- **`tests/benchmarks/`** — keeps benchmark trees aligned with current RDE + policy; excluded from CI only when using `pytest --ignore=tests/benchmarks/`.
 
 Copying a case from `tests/golden/fixtures/` into `benchmarks/<category>/` is encouraged for reproducibility; document the source in the fixture `README.md`.
 

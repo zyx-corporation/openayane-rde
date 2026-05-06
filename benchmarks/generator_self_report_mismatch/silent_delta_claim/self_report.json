@@ -1,0 +1,8 @@
+{
+  "changed_elements": ["sentence structure"],
+  "unchanged_elements": ["numbers", "citations", "definitions"],
+  "added_elements": [],
+  "deleted_elements": [],
+  "semantic_risk_notes": [],
+  "uncertainty_notes": ["No semantic change intended."]
+}
