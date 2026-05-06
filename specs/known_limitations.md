@@ -1,6 +1,6 @@
 ---
 title: "OpenAyane RDE — Known limitations and non-claims"
-version: "0.1"
+version: "0.2"
 status: "draft"
 date: "2026-05-06"
 ---
@@ -40,7 +40,15 @@ Phase 6 fixtures under `benchmarks/` are **small, curated, and implementation-al
 - Counts, rates, and perf samples in `reports/` are **not** estimates of field performance, user studies, or adversarial robustness.
 - Long-chain examples include one cumulative-baseline narrative; they do not exhaust multi-session agent behaviours.
 
-## 5. External validity
+## 5. Schema validation boundary
+
+JSON Schema files under `schemas/`, including `schemas/relation_store.schema.json`, validate **serialized structure**, not RDE semantic validity.
+
+- RelationStore schema validation checks required fields, enum domains, score ranges, nested profile shapes, and unexpected fields.
+- It does not prove that `trust`, `stability`, `context_affinity`, drift patterns, or review-threshold adjustment were updated from sufficient audit evidence.
+- It does not lift limitations on semantic equivalence, production readiness, identity, or external validity.
+
+## 6. External validity
 
 No claim is made that:
 
@@ -50,13 +58,15 @@ No claim is made that:
 
 Any publication or product narrative must separate **repository evidence** (tests, golden files, Phase 6 reports) from **external claims**.
 
-## 6. Maintenance expectation
+## 7. Maintenance expectation
 
-Changing classifiers, diff engines, or policy defaults may require updating expectations, golden files, and benchmark JSON. That is normal RDE governance, not an indication that limitations above have been “lifted.”
+Changing classifiers, diff engines, policy defaults, or schema files may require updating expectations, golden files, validation tests, and benchmark JSON. That is normal RDE governance, not an indication that limitations above have been “lifted.”
 
 ## References
 
 - `specs/rde_core_spec.md`
+- `specs/relation_store_schema.md`
+- `schemas/relation_store.schema.json`
 - `benchmarks/METRICS.md`
 - `reports/phase6_baseline_evaluation.md`
 - `docs/52_openayane_rde_phase5_completion_report.md` (operational maturity framing)
