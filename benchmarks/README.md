@@ -117,3 +117,4 @@ Copying a case from `tests/golden/fixtures/` into `benchmarks/<category>/` is en
 
 - Core vocabulary: `specs/rde_core_spec.md`
 - Phase 6 plan: `docs/60_openayane_rde_phase6_issue_branch_plan.md` (P6-3–P6-7)
+- Baseline evaluation note (P6-7): `reports/phase6_baseline_evaluation.md` and `reports/phase6_baseline_eval.json`

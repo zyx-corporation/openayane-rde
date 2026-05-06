@@ -1,0 +1,153 @@
+{
+  "report_version": "1",
+  "generated_at": "2026-05-06T02:09:22.689823+00:00",
+  "git_commit": "c45482e04c7700d0e4983d3baf3da5f4086f2e57",
+  "repo_root": "/Users/tomyuk/Projects/openayane-rde",
+  "disclaimer": "Metrics apply only to Phase 6 benchmark fixtures discovered under benchmarks/ by this script. No population inference or external validity is implied.",
+  "metrics": {
+    "cases_total": 7,
+    "classification_agreement_count": 7,
+    "classification_agreement_rate": 1.0,
+    "policy_action_agreement_count": 7,
+    "policy_action_agreement_rate": 1.0,
+    "risk_level_scored_cases": 7,
+    "risk_level_agreement_count": 7,
+    "risk_level_agreement_rate": 1.0,
+    "by_domain": {
+      "markdown": {
+        "total": 5,
+        "classification_match": 5
+      },
+      "json": {
+        "total": 1,
+        "classification_match": 1
+      },
+      "python": {
+        "total": 1,
+        "classification_match": 1
+      }
+    }
+  },
+  "metric_definitions_ref": "benchmarks/METRICS.md",
+  "cases": [
+    {
+      "case_id": "generator_self_report_mismatch/silent_delta_claim",
+      "category": "generator_self_report_mismatch",
+      "fixture": "silent_delta_claim",
+      "kind": "single",
+      "step": null,
+      "domain": "markdown",
+      "expected_classification": "critical_corruption",
+      "actual_classification": "critical_corruption",
+      "classification_match": true,
+      "expected_action": "halt",
+      "actual_action": "halt",
+      "action_match": true,
+      "expected_risk_level": "critical",
+      "actual_risk_level": "critical",
+      "risk_match": true
+    },
+    {
+      "case_id": "json_schema_corruption/required_key_deleted",
+      "category": "json_schema_corruption",
+      "fixture": "required_key_deleted",
+      "kind": "single",
+      "step": null,
+      "domain": "json",
+      "expected_classification": "critical_corruption",
+      "actual_classification": "critical_corruption",
+      "classification_match": true,
+      "expected_action": "halt",
+      "actual_action": "halt",
+      "action_match": true,
+      "expected_risk_level": "critical",
+      "actual_risk_level": "critical",
+      "risk_match": true
+    },
+    {
+      "case_id": "long_chain_document_corruption/safety_framework_cumulative/step_01",
+      "category": "long_chain_document_corruption",
+      "fixture": "safety_framework_cumulative",
+      "kind": "long_chain_step",
+      "step": "step_01",
+      "domain": "markdown",
+      "expected_classification": "suspicious_drift",
+      "actual_classification": "suspicious_drift",
+      "classification_match": true,
+      "expected_action": "human_review",
+      "actual_action": "human_review",
+      "action_match": true,
+      "expected_risk_level": "medium",
+      "actual_risk_level": "medium",
+      "risk_match": true
+    },
+    {
+      "case_id": "long_chain_document_corruption/safety_framework_cumulative/step_02",
+      "category": "long_chain_document_corruption",
+      "fixture": "safety_framework_cumulative",
+      "kind": "long_chain_step",
+      "step": "step_02",
+      "domain": "markdown",
+      "expected_classification": "suspicious_drift",
+      "actual_classification": "suspicious_drift",
+      "classification_match": true,
+      "expected_action": "human_review",
+      "actual_action": "human_review",
+      "action_match": true,
+      "expected_risk_level": "medium",
+      "actual_risk_level": "medium",
+      "risk_match": true
+    },
+    {
+      "case_id": "long_chain_document_corruption/safety_framework_cumulative/step_03",
+      "category": "long_chain_document_corruption",
+      "fixture": "safety_framework_cumulative",
+      "kind": "long_chain_step",
+      "step": "step_03",
+      "domain": "markdown",
+      "expected_classification": "critical_corruption",
+      "actual_classification": "critical_corruption",
+      "classification_match": true,
+      "expected_action": "halt",
+      "actual_action": "halt",
+      "action_match": true,
+      "expected_risk_level": "critical",
+      "actual_risk_level": "critical",
+      "risk_match": true
+    },
+    {
+      "case_id": "markdown_drift/citation_deleted",
+      "category": "markdown_drift",
+      "fixture": "citation_deleted",
+      "kind": "single",
+      "step": null,
+      "domain": "markdown",
+      "expected_classification": "critical_corruption",
+      "actual_classification": "critical_corruption",
+      "classification_match": true,
+      "expected_action": "halt",
+      "actual_action": "halt",
+      "action_match": true,
+      "expected_risk_level": "critical",
+      "actual_risk_level": "critical",
+      "risk_match": true
+    },
+    {
+      "case_id": "python_api_drift/signature_changed",
+      "category": "python_api_drift",
+      "fixture": "signature_changed",
+      "kind": "single",
+      "step": null,
+      "domain": "python",
+      "expected_classification": "suspicious_drift",
+      "actual_classification": "suspicious_drift",
+      "classification_match": true,
+      "expected_action": "human_review",
+      "actual_action": "human_review",
+      "action_match": true,
+      "expected_risk_level": "medium",
+      "actual_risk_level": "medium",
+      "risk_match": true
+    }
+  ]
+}
