@@ -48,7 +48,15 @@ High-level data flow (expand with diagram in camera-ready version):
 - **Baseline note:** `reports/phase6_baseline_evaluation.md` and `reports/phase6_baseline_eval.json`
 - **Regression:** `tests/golden/`, `tests/benchmarks/`
 
-**(Skeleton.)** Future versions should add: larger corpora, locale coverage, human-review studies, calibration analysis — only where claims are explicitly scoped.
+Current Phase 6 baseline snapshot (`reports/phase6_baseline_eval.json`):
+
+- Evaluation units: **10** (markdown 7 / json 2 / python 1)
+- Classification agreement: **10 / 10 (100%)**
+- Policy action agreement: **10 / 10 (100%)**
+- Risk-level agreement (scored cases): **8 / 8 (100%)**
+
+These numbers are fixture-local agreement metrics, not external performance claims.
+Future versions should add larger corpora, locale coverage, human-review studies, and calibration analysis only when claim scope is explicitly expanded.
 
 ## 5. Limitations and non-claims
 
@@ -61,7 +69,7 @@ See **`specs/known_limitations.md`** (high assurance, semantic equivalence, prod
 ## 7. Reproducibility
 
 - Repository: OpenAyane RDE (implementation plan and Phase 6 artefacts in-tree).
-- **Recorded implementation snapshot** for the Phase 6 baseline JSON: see `git_commit` in `reports/phase6_baseline_eval.json`.
+- **Recorded implementation snapshot** for the Phase 6 baseline JSON: `git_commit = d591415f3688318b6126b755b1ed64bdb6c43379`.
 
 ## 8. References
 
