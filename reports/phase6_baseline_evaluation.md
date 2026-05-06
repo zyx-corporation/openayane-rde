@@ -8,7 +8,7 @@ This note records a **fixture-local** baseline for the Phase 6 benchmark tree. I
 
 | Field | Value |
 |-------|--------|
-| Package version (`pyproject.toml`) | `0.1.0` |
+| Package version (`pyproject.toml`) | `0.1.1` (post–Phase 6 housekeeping; baseline JSON may still reference earlier commit) |
 | Git commit evaluated (see JSON `git_commit`) | `c45482e04c7700d0e4983d3baf3da5f4086f2e57` |
 | Evaluation harness | `benchmarks/evaluate.py` report version `1` |
 
