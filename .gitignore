@@ -35,3 +35,6 @@ build/
 # Generated paper assets can be committed intentionally when needed.
 # paper/figures/*.png
 # paper/*.pdf
+
+.openayane/
+
