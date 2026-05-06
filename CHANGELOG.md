@@ -13,6 +13,7 @@
 
 ### Added
 
+- Phase 6 P6-10 / P6-9 / P6-8: `docs/62_openayane_rde_phase6_completion_report.md`, `specs/known_limitations.md`, `papers/openayane_rde_paper_draft.md` (technical report skeleton).
 - Phase 6 P6-7: `reports/phase6_baseline_evaluation.md`, `reports/phase6_baseline_eval.json`, and sample `reports/phase6_perf_sample.json` (low-iteration perf harness) for fixture-local baseline documentation.
 - Phase 6 P6-6: `benchmarks/evaluate.py` (JSON benchmark report, fixture discovery, classification/action/risk metrics), `benchmarks/METRICS.md`, and `tests/benchmarks/test_benchmark_evaluate_smoke.py`.
 - Phase 6 P6-5: `benchmarks/long_chain_document_corruption/safety_framework_cumulative` (three-step cumulative baseline drift) and `benchmarks/generator_self_report_mismatch/silent_delta_claim`; tests `tests/benchmarks/test_benchmark_p6_long_chain.py`, `test_benchmark_p6_self_report_mismatch.py`.
