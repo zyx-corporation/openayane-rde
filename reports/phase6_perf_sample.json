@@ -1,0 +1,48 @@
+{
+  "generated_at_utc": "2026-05-06T02:09:06.172120+00:00",
+  "environment_note": "Local, single-machine timings; not comparable across hardware.",
+  "remote_or_llm_paths": "excluded_by_design",
+  "benchmarks": [
+    {
+      "name": "structural_diff_markdown",
+      "category": "core_local",
+      "iterations": 5,
+      "p50_ms": 0.026082969270646572,
+      "p95_ms": 0.043332925997674465,
+      "note": "sample_size_low"
+    },
+    {
+      "name": "markdown_diff_engine",
+      "category": "core_local",
+      "iterations": 5,
+      "p50_ms": 0.02025009598582983,
+      "p95_ms": 0.027582980692386627,
+      "note": "sample_size_low"
+    },
+    {
+      "name": "relation_json_load_context",
+      "category": "core_local",
+      "iterations": 5,
+      "p50_ms": 0.042958068661391735,
+      "p95_ms": 1.8182919593527913,
+      "note": "sample_size_low"
+    },
+    {
+      "name": "policy_decide",
+      "category": "core_local",
+      "iterations": 5,
+      "p50_ms": 0.005292007699608803,
+      "p95_ms": 0.01770805101841688,
+      "note": "sample_size_low"
+    },
+    {
+      "name": "audit_append_jsonl",
+      "category": "core_local",
+      "iterations": 5,
+      "p50_ms": 1.7120830016210675,
+      "p95_ms": 1.7227920470759273,
+      "note": "sample_size_low"
+    }
+  ],
+  "report_path": "/Users/tomyuk/Projects/openayane-rde/reports/phase6_perf_sample.json"
+}
