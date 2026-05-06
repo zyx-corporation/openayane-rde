@@ -13,6 +13,7 @@
 
 ### Added
 
+- Phase 6 `benchmarks/` skeleton: category directories, `benchmarks/README.md` (fixture layout, naming, `expected_rde_result.json` convention, non-goals).
 - Phase 6 public documentation: `specs/rde_core_spec.md` (RDE core terms and non-claims) and schema prose (`specs/task_contract_schema.md`, `specs/rde_result_schema.md`, `specs/audit_event_schema.md`, `specs/relation_store_schema.md`) aligned with `schemas/*.schema.json` and `openayane_rde.core.models`.
 - `execute_after_review_decision()` to resume `SafeExecutionRuntime` after `approve` or `approve_dry_run`.
 - `run_phase1_evaluation_from_post_execution_diff()` (`PostExecutionDiff` → Phase 1 evaluation).
