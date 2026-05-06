@@ -375,6 +375,8 @@ Key risks:
 
 If Phase 6 work is later re-split into GitHub Issues, add an **Issue** column or table alongside the PR table in §8.4. PR links above remain the historical merge record.
 
+**Post-Phase-6 planning:** Phase 6 exit criteria and Phase 7 track split (7A–7D) are documented in `docs/00_development_plan.md` §9.5–§9.6 (see GitHub [#92](https://github.com/zyx-corporation/openayane-rde/issues/92)).
+
 ## 9. Final statement
 
 Phase 6 should make OpenAyane RDE legible, reproducible, and criticizable.

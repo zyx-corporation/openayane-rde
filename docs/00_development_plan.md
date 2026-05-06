@@ -1,7 +1,7 @@
 ---
 title: "OpenAyane RDE 全体実装計画"
 version: "0.1-draft"
-date: "2026-05-04"
+date: "2026-05-06"
 author: "Tomoyuki Kano"
 status: "development plan"
 ---
@@ -99,6 +99,8 @@ Phase 3 出口（L1 境界の固定）および Phase 4 Institution Bridge 初�
 Phase 5（運用化・CLI / 設定 / アダプタ / 回帰など）の詳細・Issue 分割・**推奨実行順**: [`50_openayane_rde_phase5_operational_hardening_spec.md`](50_openayane_rde_phase5_operational_hardening_spec.md)（GitHub [#44](https://github.com/zyx-corporation/openayane-rde/issues/44) 〜 [#54](https://github.com/zyx-corporation/openayane-rde/issues/54)）。着手は同文書 §17 に従い、通常 **#44（CLI）を最初**とする。
 
 Phase 6（研究評価・公開仕様）の実行計画: [`60_openayane_rde_phase6_issue_branch_plan.md`](60_openayane_rde_phase6_issue_branch_plan.md)。**Phase 6 完了の出口記録:** [`62_openayane_rde_phase6_completion_report.md`](62_openayane_rde_phase6_completion_report.md)。
+
+**Phase 6 の公式な出口基準と、Phase 6 完了境界の外に置く後続作業（Phase 7 トラックの分割）は §9.5 / §9.6 を正とする。** 主張が検証されていない範囲は [`specs/known_limitations.md`](../specs/known_limitations.md) に従い、計画本文でも同文書へ参照を置く。
 
 各Phaseは、前Phaseの成果物を明確に入力として受け取る。特にPhase 1で生成されるPhase1EvaluationResultは、Phase 2以降の中核的な接続点となる。
 
@@ -724,6 +726,39 @@ Audit completeness
 - 既知の限界が明記されている
 - 論文または技術報告の草稿が作成されている
 ```
+
+### 9.5 Phase 6 出口基準（exit criteria）
+
+Phase 6 の「完了」は、**本番能力の一括拡張**ではなく、**研究・仕様・再現可能な評価アーティファクトの固定**である。次をすべて満たすとき Phase 6 出口とみなす。
+
+```text
+- §9.2 の主要成果物がリポジトリに存在し、`docs/62_openayane_rde_phase6_completion_report.md` でマージ記録・成果物一覧が追跡できる
+- `benchmarks/` と `benchmarks/evaluate.py` により、定義されたフィクスチャ単位の評価が再現可能である（ベースラインは `reports/` を参照）
+- 外部有効性・本番保証・意味同値の全称的主張をしないことが、`specs/known_limitations.md` で明示されている
+- 未検証の主張やスコープ境界は、仕様・論文草稿・計画のいずれにおいても known limitations へ参照または同趣旨の記述で結び付けられている
+```
+
+**Phase 6 完了境界に含めない（別トラックへ退避する）例:**
+
+```text
+- OpenClaw 等との本番統合の具体 hook 設計・実装
+- PoP-UID・暗号化監査ログ等の制度・本人性の本番級実装
+- LLM evaluator ensemble を中核とした評価への置換や、それに準ずる主張の強化
+- Operational Pilot Ready を超える運用・制度ロールアウト（Phase 7D で扱う）
+```
+
+### 9.6 Phase 7 以降のトラック（7A–7D）
+
+Phase 6 出口後の作業は、単一の「残タスク山」にまとめない。**目的と証拠の種類が異なるため、以下のトラックに分割して計画・Issue 化する。** トラック間の依存は都度見直す。
+
+| トラック | 目的（要約） | 典型アウトプット | 追跡の例 |
+|----------|----------------|------------------|----------|
+| **7A** 仕様・スキーマの硬化 | 公開仕様と実装表現（JSON Schema 等）の整合、構造検証の自動化 | 公式スキーマ、検証テスト／CI、文書更新 | GitHub [#93](https://github.com/zyx-corporation/openayane-rde/issues/93) |
+| **7B** 評価・ベンチマークの拡張 | 多言語・ドメイン・敵対例など、計画された範囲での評価拡張 | カテゴリ定義、`evaluate.py` との対応表、限界の更新 | GitHub [#94](https://github.com/zyx-corporation/openayane-rde/issues/94) |
+| **7C** 研究・公開 | 論文・技術報告の主張をリポジトリ証拠に整合させる | 草稿の引用・再現手順・図表、主張のトレーサビリティ | GitHub [#95](https://github.com/zyx-corporation/openayane-rde/issues/95) |
+| **7D** 制度・本番トラック | パイロットを超える運用・制度・統合（別マイルストーン） | 仕様・非主張の再検討、運用設計、段階的実装 Issue | （リポジトリ外・組織手続きと併走しうる） |
+
+本節の分割方針の記録・計画書との同期: GitHub [#92](https://github.com/zyx-corporation/openayane-rde/issues/92)。**検証されていない主張は [`specs/known_limitations.md`](../specs/known_limitations.md) を正とし、各トラックの文書でも同文書を参照する。**
 
 ## 10. 横断的な開発方針
 
