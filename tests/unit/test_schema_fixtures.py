@@ -17,6 +17,7 @@ _FIXTURES = [
     "structural_diff",
     "rde_result",
     "audit_event",
+    "relation_store",
 ]
 
 

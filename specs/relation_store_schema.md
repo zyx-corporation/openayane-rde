@@ -9,14 +9,17 @@ date: "2026-05-06"
 
 ## Status
 
-There is **no** top-level `schemas/relation_store.schema.json` in this repository yet. The canonical serialized shape for Phase 2 relation persistence is defined by **Pydantic models** and the JSON-backed store implementation.
+Top-level JSON Schema now exists at `schemas/relation_store.schema.json`. The canonical serialized shape for Phase 2 relation persistence remains grounded in **Pydantic models** and the JSON-backed store implementation, with the schema used to validate persisted snapshots and fixtures.
 
 **Primary references:**
 
 - `RelationStoreRecord`, `RelationContext`, `DriftPattern`, `GeneratorReliabilityProfile`, `DocumentFragilityProfile`, `RelationUpdateSummary` in `openayane_rde.core.models`
 - Runtime persistence: `JSONRelationStore` (Phase 2 minimal; single-file JSON, not concurrent-production-grade — see `README.md`)
 
-When a formal JSON Schema is added under `schemas/`, this document should be updated to reference it and duplicate required/optional lists should be removed in favour of the schema file.
+Schema validation entrypoints:
+
+- CLI: `openayane-rde schema validate`
+- Tests: `tests/unit/test_schema_fixtures.py`, `tests/unit/test_schema_validation.py`
 
 ## RelationStoreRecord (conceptual)
 
