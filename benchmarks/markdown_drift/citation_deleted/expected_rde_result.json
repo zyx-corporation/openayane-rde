@@ -1,0 +1,6 @@
+{
+  "classification": "critical_corruption",
+  "risk_level": "critical",
+  "required_action": "halt",
+  "notes": "Protected citations removed; expect Policy halt for critical_corruption."
+}

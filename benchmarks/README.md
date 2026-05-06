@@ -1,6 +1,6 @@
 # OpenAyane RDE — Phase 6 benchmarks
 
-Research-oriented, reproducible fixtures for evaluating RDE behaviour. These are **not** a substitute for `pytest` golden tests under `tests/golden/`; they provide a stable, documented tree for Phase 6 metrics and baseline reports.
+Research-oriented, reproducible fixtures for evaluating RDE behaviour. **`tests/golden/`** remains the original regression suite; **`benchmarks/`** is the Phase 6 tree for reports and metrics. Structural P6-4 cases are also checked by `tests/benchmarks/test_benchmark_p6_structural_fixtures.py` (full `pytest` runs it; skip with `pytest --ignore=tests/benchmarks/`).
 
 ## Layout
 
@@ -13,6 +13,16 @@ benchmarks/
   long_chain_document_corruption/   ← multi-step sequences (P6-5)
   generator_self_report_mismatch/   ← self-report vs diff mismatch (P6-5)
 ```
+
+## Structural fixtures (P6-4)
+
+| Category | `fixture_id` | Expected `classification` (see `expected_rde_result.json`) |
+|----------|--------------|-------------------------------------------------------------|
+| `markdown_drift/` | `citation_deleted` | `critical_corruption` |
+| `json_schema_corruption/` | `required_key_deleted` | `critical_corruption` |
+| `python_api_drift/` | `signature_changed` | `suspicious_drift` |
+
+Each case includes `README.md`, `manifest.json` (golden lineage), and the standard file set below.
 
 Each **fixture** lives in its own directory:
 

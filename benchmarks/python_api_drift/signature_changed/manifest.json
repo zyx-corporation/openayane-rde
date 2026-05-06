@@ -1,0 +1,7 @@
+{
+  "fixture_id": "signature_changed",
+  "category": "python_api_drift",
+  "domain": "python",
+  "phase6": "P6-4",
+  "source_golden": "tests/golden/fixtures/python_signature_changed"
+}
