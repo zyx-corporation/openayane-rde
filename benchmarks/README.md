@@ -46,6 +46,15 @@ Each case includes `README.md`, `manifest.json` (golden lineage), and the standa
 
 Tests: `test_benchmark_p6_long_chain.py`, `test_benchmark_p6_self_report_mismatch.py`.
 
+## Adversarial / stress fixtures (initial set)
+
+Initial stress-oriented fixtures are intentionally small and **fixture-local**:
+
+- `markdown_drift/long_text_number_boundary_change`: long text with one boundary-value number change.
+- `json_schema_corruption/required_key_deleted_long_payload`: required key deletion with longer payload content.
+
+These cases exercise stability of rule-based extraction under larger inputs, but they do **not** claim broad adversarial robustness (see `specs/known_limitations.md`).
+
 Each **fixture** lives in its own directory:
 
 ```text
