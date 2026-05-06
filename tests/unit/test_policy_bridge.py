@@ -1,4 +1,8 @@
-"""Unit tests for Policy Bridge."""
+"""Unit tests for Policy Bridge (synthetic RDEResult → PolicyDecision only).
+
+Does not prove RDE classification correctness by itself; see
+[`docs/63_openayane_rde_testing_policy.md`](../../docs/63_openayane_rde_testing_policy.md) §3.
+"""
 
 from __future__ import annotations
 

@@ -3,10 +3,10 @@
 # The actual paper build logic lives in paper/Makefile so figure paths remain
 # local to the LaTeX source directory.
 #
-# Python: matches CI (.github/workflows/ci.yml): Python 3.12+, pytest, ruff, mypy.
+# Python: matches CI (.github/workflows/ci.yml): Python 3.12+, pytest, CLI schema/golden, ruff, mypy.
 # Optional: `make venv PY=/path/to/python3.12` to pin the interpreter.
 
-.PHONY: all paper figures clean distclean check-tools venv dev-install test lint ci
+.PHONY: all paper figures clean distclean check-tools venv dev-install test lint cli-regression ci
 
 venv:
 	@if [ -n "$(PY)" ]; then \
@@ -35,10 +35,13 @@ lint:
 	.venv/bin/ruff check src tests
 	.venv/bin/mypy src
 
-# Same order as CI: Tests → Ruff → Mypy
-# Optional regression (P5-7 / P5-8): `openayane-rde schema validate`, `golden run`, `perf run`
-#   (after `pip install -e '.[dev,markdown]'`).
-ci: test lint
+# Same order as CI: Tests → CLI schema validate → CLI golden run → Ruff → Mypy
+ci: test cli-regression lint
+
+cli-regression:
+	@test -f .venv/bin/openayane-rde || (echo "Run: make venv && make dev-install" && exit 1)
+	.venv/bin/openayane-rde schema validate --repo-root .
+	.venv/bin/openayane-rde golden run --repo-root .
 
 all: paper
 

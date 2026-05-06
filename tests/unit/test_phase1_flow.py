@@ -8,6 +8,8 @@ Verifies the full evaluation pipeline described in phase1_implementation_plan.md
     policy_decision = decide_policy(rde_result, task_contract)
     audit_event     = write_audit_event(...)  # optional
     return Phase1EvaluationResult(...)
+
+RDE vs Policy assertions: [`docs/63_openayane_rde_testing_policy.md`](../../docs/63_openayane_rde_testing_policy.md) §3.
 """
 
 from __future__ import annotations
@@ -68,6 +70,8 @@ def test_flow_markdown_preserved() -> None:
     assert result.audit_event is None
     assert result.rde_result.evidence_basis == ["structural_diff", "semantic_delta"]
     assert result.structural_diff.contract_id == contract.contract_id  # type: ignore[union-attr]
+    # RDE: no structural deviation → Policy: approve
+    assert result.rde_result.classification == "preserved"
     decision = result.policy_decision
     assert decision.action == "approve"
     assert decision.contract_id == contract.contract_id  # type: ignore[union-attr]
@@ -91,6 +95,7 @@ def test_flow_markdown_citation_deleted_halts() -> None:
         domain="markdown",
     )
 
+    assert result.rde_result.classification == "critical_corruption"
     assert result.policy_decision.action == "halt"
 
 
@@ -117,6 +122,7 @@ def test_flow_json_required_field_deleted_halts() -> None:
         required_json_fields=["name", "version", "status"],
     )
 
+    assert result.rde_result.classification == "critical_corruption"
     assert result.policy_decision.action == "halt"
 
 
@@ -143,6 +149,7 @@ def test_flow_python_signature_changed_human_review() -> None:
         domain="python",
     )
 
+    assert result.rde_result.classification == "suspicious_drift"
     assert result.policy_decision.action in ("human_review", "halt")
 
 
@@ -229,6 +236,7 @@ def test_flow_self_report_mismatch_in_audit() -> None:
         events = load_events(log_path)
         assert len(events) == 1
         ev = events[0]
+        assert result.rde_result.classification in ("suspicious_drift", "critical_corruption")
         assert ev.payload.get("classification") in (
             "suspicious_drift", "critical_corruption"
         )

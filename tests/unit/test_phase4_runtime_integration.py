@@ -1,4 +1,8 @@
-"""Phase 4: institution hooks on Phase 1 flow and execution gate."""
+"""Phase 4: institution hooks on Phase 1 flow and execution gate.
+
+Institution can change the final policy action after RDE; tests should pin **RDE** and **policy**
+separately where both matter ([`docs/63_openayane_rde_testing_policy.md`](../../docs/63_openayane_rde_testing_policy.md) §3).
+"""
 
 from __future__ import annotations
 
@@ -91,6 +95,7 @@ def test_run_phase1_evaluation_institution_escalates_approve_to_human_review() -
         institution_action_type="write",
         institution_side_effect="none",
     )
+    assert result.rde_result.classification == "preserved"
     assert result.policy_decision.action == "human_review"
     assert result.policy_decision.institution_rule_id == "rule_write_doc"
 

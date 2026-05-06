@@ -98,7 +98,7 @@ Phase 3 出口（L1 境界の固定）および Phase 4 Institution Bridge 初�
 
 Phase 5（運用化・CLI / 設定 / アダプタ / 回帰など）の詳細・Issue 分割・**推奨実行順**: [`50_openayane_rde_phase5_operational_hardening_spec.md`](50_openayane_rde_phase5_operational_hardening_spec.md)（GitHub [#44](https://github.com/zyx-corporation/openayane-rde/issues/44) 〜 [#54](https://github.com/zyx-corporation/openayane-rde/issues/54)）。着手は同文書 §17 に従い、通常 **#44（CLI）を最初**とする。
 
-Phase 6（研究評価・公開仕様）の実行計画: [`60_openayane_rde_phase6_issue_branch_plan.md`](60_openayane_rde_phase6_issue_branch_plan.md)。**Phase 6 完了の出口記録:** [`62_openayane_rde_phase6_completion_report.md`](62_openayane_rde_phase6_completion_report.md)。
+Phase 6（研究評価・公開仕様）の実行計画: [`60_openayane_rde_phase6_issue_branch_plan.md`](60_openayane_rde_phase6_issue_branch_plan.md)。**Phase 6 完了の出口記録:** [`62_openayane_rde_phase6_completion_report.md`](62_openayane_rde_phase6_completion_report.md)。**Phase 6 以降の起票用バックログ（GitHub Project 向け）:** [`64_openayane_rde_post_phase6_project_issues.md`](64_openayane_rde_post_phase6_project_issues.md)。
 
 各Phaseは、前Phaseの成果物を明確に入力として受け取る。特にPhase 1で生成されるPhase1EvaluationResultは、Phase 2以降の中核的な接続点となる。
 

@@ -1,4 +1,8 @@
-"""Unit tests for RDE Classifier and Core."""
+"""Unit tests for RDE Classifier and Core (RDEResult / evidence; not Policy bridge).
+
+Policy mapping is tested in `test_policy_bridge.py`. See
+[`docs/63_openayane_rde_testing_policy.md`](../../docs/63_openayane_rde_testing_policy.md) §3.
+"""
 
 from __future__ import annotations
 
