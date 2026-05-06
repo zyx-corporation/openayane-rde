@@ -23,11 +23,13 @@ from openayane_rde.core.models import (
     GeneratorOutput,
     ModelInfo,
     ProtectedChange,
+    RelationStoreRecord,
     RDEResult,
     SelfReport,
     SelfReportMismatch,
     StructuralDiff,
 )
+from openayane_rde.relation.store import relation_store_key
 
 SCHEMAS_DIR = Path(__file__).parent.parent.parent / "schemas"
 
@@ -353,3 +355,15 @@ def test_audit_event_missing_required_field_rejected() -> None:
     del data["explanation"]
     with pytest.raises(jsonschema.ValidationError):
         validate(data, schema)
+
+
+# ---------------------------------------------------------------------------
+# RelationStore (JSONRelationStore snapshot)
+# ---------------------------------------------------------------------------
+
+
+def test_relation_store_schema_conformance_minimal_map() -> None:
+    rec = RelationStoreRecord(subject_id="s", object_id="o")
+    data = {relation_store_key("s", "o"): json.loads(rec.model_dump_json())}
+    schema = load_schema("relation_store.schema.json")
+    validate(data, schema)

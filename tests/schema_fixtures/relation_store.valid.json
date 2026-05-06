@@ -1,0 +1,32 @@
+{
+  "s\u001fo\u001fgenerator-document": {
+    "relation_id": "rel_fixture",
+    "subject_id": "s",
+    "object_id": "o",
+    "relation_type": "generator-document",
+    "trust": 0.55,
+    "stability": 0.6,
+    "context_affinity": 0.5,
+    "interaction_count": 12,
+    "critical_corruption_count": 0,
+    "suspicious_drift_count": 2,
+    "self_report_mismatch_count": 1,
+    "self_report_mismatch_item_count": 3,
+    "drift_patterns": [
+      {
+        "pattern_id": "dp_fixture",
+        "kind": "self_report_mismatch",
+        "count": 1,
+        "severity": "high",
+        "examples": ["reported: numbers unchanged; actual: changed 0.95 -> 0.70"],
+        "last_seen_at": "2026-05-06T12:05:00Z"
+      }
+    ],
+    "generator_reliability_profile": null,
+    "document_fragility_profile": null,
+    "review_threshold_adjustment": 0.1,
+    "last_delta_m": 0.35,
+    "last_audit_event_id": null,
+    "updated_at": "2026-05-06T12:05:00Z"
+  }
+}

@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/zyx-corporation/openayane-rde/schemas/relation_store.schema.json",
+  "title": "RelationStore (JSON backend snapshot)",
+  "type": "object",
+  "description": "Top-level JSON file persisted by JSONRelationStore: map key -> RelationStoreRecord.",
+  "additionalProperties": { "$ref": "#/$defs/relation_store_record" },
+  "$defs": {
+    "risk_level": {
+      "type": "string",
+      "enum": ["low", "medium", "high", "critical"]
+    },
+    "relation_type": {
+      "type": "string",
+      "enum": [
+        "generator-document",
+        "agent-document",
+        "user-agent",
+        "tool-workspace",
+        "domain-policy"
+      ]
+    },
+    "drift_pattern_kind": {
+      "type": "string",
+      "enum": [
+        "citation_weakening",
+        "citation_deletion",
+        "number_change",
+        "definition_shift",
+        "constraint_omission",
+        "schema_key_deletion",
+        "required_field_deletion",
+        "signature_change",
+        "test_deletion",
+        "self_report_mismatch",
+        "other"
+      ]
+    },
+    "drift_pattern": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pattern_id", "kind", "count", "severity", "examples", "last_seen_at"],
+      "properties": {
+        "pattern_id": { "type": "string" },
+        "kind": { "$ref": "#/$defs/drift_pattern_kind" },
+        "count": { "type": "integer", "minimum": 0 },
+        "severity": { "$ref": "#/$defs/risk_level" },
+        "examples": { "type": "array", "items": { "type": "string" } },
+        "last_seen_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "generator_reliability_profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "generator_id",
+        "total_outputs",
+        "self_report_mismatch_count",
+        "critical_corruption_count",
+        "suspicious_drift_count",
+        "preserved_count",
+        "authorized_deviation_count",
+        "reliability_score"
+      ],
+      "properties": {
+        "generator_id": { "type": "string" },
+        "total_outputs": { "type": "integer", "minimum": 0 },
+        "self_report_mismatch_count": { "type": "integer", "minimum": 0 },
+        "critical_corruption_count": { "type": "integer", "minimum": 0 },
+        "suspicious_drift_count": { "type": "integer", "minimum": 0 },
+        "preserved_count": { "type": "integer", "minimum": 0 },
+        "authorized_deviation_count": { "type": "integer", "minimum": 0 },
+        "reliability_score": { "type": "number", "minimum": 0.0, "maximum": 1.0 }
+      }
+    },
+    "document_fragility_profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "document_id",
+        "total_edits",
+        "protected_change_count",
+        "citation_break_count",
+        "number_change_count",
+        "definition_shift_count",
+        "fragility_score"
+      ],
+      "properties": {
+        "document_id": { "type": "string" },
+        "total_edits": { "type": "integer", "minimum": 0 },
+        "protected_change_count": { "type": "integer", "minimum": 0 },
+        "citation_break_count": { "type": "integer", "minimum": 0 },
+        "number_change_count": { "type": "integer", "minimum": 0 },
+        "definition_shift_count": { "type": "integer", "minimum": 0 },
+        "fragility_score": { "type": "number", "minimum": 0.0, "maximum": 1.0 }
+      }
+    },
+    "relation_store_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "relation_id",
+        "subject_id",
+        "object_id",
+        "relation_type",
+        "trust",
+        "stability",
+        "context_affinity",
+        "interaction_count",
+        "critical_corruption_count",
+        "suspicious_drift_count",
+        "self_report_mismatch_count",
+        "self_report_mismatch_item_count",
+        "drift_patterns",
+        "generator_reliability_profile",
+        "document_fragility_profile",
+        "review_threshold_adjustment",
+        "last_delta_m",
+        "last_audit_event_id",
+        "updated_at"
+      ],
+      "properties": {
+        "relation_id": { "type": "string" },
+        "subject_id": { "type": "string" },
+        "object_id": { "type": "string" },
+        "relation_type": { "$ref": "#/$defs/relation_type" },
+        "trust": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "stability": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "context_affinity": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "interaction_count": { "type": "integer", "minimum": 0 },
+        "critical_corruption_count": { "type": "integer", "minimum": 0 },
+        "suspicious_drift_count": { "type": "integer", "minimum": 0 },
+        "self_report_mismatch_count": { "type": "integer", "minimum": 0 },
+        "self_report_mismatch_item_count": { "type": "integer", "minimum": 0 },
+        "drift_patterns": { "type": "array", "items": { "$ref": "#/$defs/drift_pattern" } },
+        "generator_reliability_profile": {
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/generator_reliability_profile" }
+          ]
+        },
+        "document_fragility_profile": {
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/document_fragility_profile" }
+          ]
+        },
+        "review_threshold_adjustment": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "last_delta_m": { "type": "number" },
+        "last_audit_event_id": { "type": ["string", "null"] },
+        "updated_at": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}
