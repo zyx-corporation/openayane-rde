@@ -23,6 +23,11 @@ jobs:
           pip install -e '.[dev,markdown]'
       - name: Tests
         run: pytest
+      # CLI regression (Phase 5 P5-7): same entrypoints as local `openayane-rde` after editable install.
+      - name: CLI schema validate
+        run: openayane-rde schema validate --repo-root .
+      - name: CLI golden run
+        run: openayane-rde golden run --repo-root .
       - name: Ruff
         run: ruff check src tests
       - name: Mypy
