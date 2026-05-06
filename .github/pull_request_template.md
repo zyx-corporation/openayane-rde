@@ -36,10 +36,18 @@ Closes #
 ## Evidence
 
 - [ ] Tests added or updated
+- [ ] TDD evidence documented (Red test, Green implementation, Refactor invariants)
+- [ ] If golden changed, rationale is intent-driven ΔM change (not implementation convenience)
 - [ ] Manual verification described
 - [ ] Audit trace / log behavior described if relevant
 - [ ] Rollback or migration impact described if relevant
 - [ ] Human review requested for High / Critical risk
+
+### TDD evidence (docs/63 §2.4)
+
+- Red: 
+- Green: 
+- Refactor (and invariants checked: golden / schema / benchmark / CI):
 
 ## Acceptance
 
