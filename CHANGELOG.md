@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.2] - 2026-05-06
+
+### Added
+
+- `schemas/relation_store.schema.json` with tests and spec updates (structural JSON Schema for `RelationStoreRecord`; **7A / #93**). Representative fixtures: `tests/schema_fixtures/relation_store.valid.json`, `relation_store.invalid.json`.
+- `benchmarks/BENCHMARK_EXPANSION_PLAN.md` — planning doc for multilingual, extra-domain, and adversarial benchmark batches without implying new external-validity claims (**7B / #94**).
+- Development plan §9.5–§9.6: Phase 6 exit criteria and Phase 7 tracks (**#92**), merged from planning PR work.
+
+### Changed
+
+- `papers/openayane_rde_paper_draft.md`: reproduction commands, claim–evidence table, related-work skeleton, explicit bounds via **`specs/known_limitations.md`** (**#95**).
+- `specs/known_limitations.md`: benchmark expansion plan pointer; schema validation boundary unchanged in intent.
+- `benchmarks/README.md`, `docs/60_openayane_rde_phase6_issue_branch_plan.md`, `specs/relation_store_schema.md`: cross-links for the above.
+
 ## [0.1.1] - 2026-05-06
 
 ### Added

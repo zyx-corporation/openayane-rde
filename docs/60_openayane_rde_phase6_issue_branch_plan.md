@@ -381,6 +381,8 @@ Key risks:
 
 **Post-Phase-6 planning:** Phase 6 exit criteria and Phase 7 track split (7A–7D) are documented in `docs/00_development_plan.md` §9.5–§9.6 (see GitHub [#92](https://github.com/zyx-corporation/openayane-rde/issues/92)).
 
+**Benchmark expansion (planning-only until fixtures land):** `benchmarks/BENCHMARK_EXPANSION_PLAN.md` (GitHub [#94](https://github.com/zyx-corporation/openayane-rde/issues/94)).
+
 ## 9. Final statement
 
 Phase 6 should make OpenAyane RDE legible, reproducible, and criticizable.

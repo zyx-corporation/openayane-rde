@@ -1,0 +1,20 @@
+{
+  "relation_id": "rel_fixture_invalid",
+  "object_id": "doc_1",
+  "relation_type": "generator-document",
+  "trust": 0.5,
+  "stability": 0.5,
+  "context_affinity": 0.5,
+  "interaction_count": 0,
+  "critical_corruption_count": 0,
+  "suspicious_drift_count": 0,
+  "self_report_mismatch_count": 0,
+  "self_report_mismatch_item_count": 0,
+  "drift_patterns": [],
+  "generator_reliability_profile": null,
+  "document_fragility_profile": null,
+  "review_threshold_adjustment": 0.0,
+  "last_delta_m": 0.0,
+  "last_audit_event_id": null,
+  "updated_at": "2026-05-06T12:00:00Z"
+}

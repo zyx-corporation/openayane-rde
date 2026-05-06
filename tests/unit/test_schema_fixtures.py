@@ -26,3 +26,14 @@ def test_fixture_validates_against_schema(name: str) -> None:
     schema = json.loads((SCHEMAS_DIR / f"{name}.schema.json").read_text(encoding="utf-8"))
     instance = json.loads((FIXTURES_DIR / f"{name}.valid.json").read_text(encoding="utf-8"))
     jsonschema.validate(instance, schema)
+
+
+def test_relation_store_invalid_fixture_rejected() -> None:
+    schema = json.loads(
+        (SCHEMAS_DIR / "relation_store.schema.json").read_text(encoding="utf-8")
+    )
+    instance = json.loads(
+        (FIXTURES_DIR / "relation_store.invalid.json").read_text(encoding="utf-8")
+    )
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(instance, schema)

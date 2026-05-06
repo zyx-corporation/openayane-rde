@@ -8,6 +8,7 @@ Research-oriented, reproducible fixtures for evaluating RDE behaviour. **`tests/
 benchmarks/
   README.md                         ← this file
   METRICS.md                        ← metric definitions (P6-6)
+  BENCHMARK_EXPANSION_PLAN.md       ← planned multilingual / domain / adversarial growth (#94)
   evaluate.py                       ← JSON report harness (P6-6)
   markdown_drift/                   ← Markdown structural / drift cases
   json_schema_corruption/           ← JSON shape / required-field cases
@@ -26,6 +27,8 @@ python benchmarks/evaluate.py --repo-root . -o reports/phase6_eval.json
 ```
 
 Metrics and non-claims: **`benchmarks/METRICS.md`**. Exit code **0** when every case matches expected **classification** and **policy action**; `risk_level` mismatches are reported in JSON but do not change the exit code unless we tighten this later.
+
+Future fixture categories (without implying new external-validity claims until implemented): **`benchmarks/BENCHMARK_EXPANSION_PLAN.md`**.
 
 ## Structural fixtures (P6-4)
 

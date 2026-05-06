@@ -39,6 +39,7 @@ Phase 6 fixtures under `benchmarks/` are **small, curated, and implementation-al
 - Metrics from `benchmarks/evaluate.py` describe agreement with `expected_rde_result.json` for those fixtures only.
 - Counts, rates, and perf samples in `reports/` are **not** estimates of field performance, user studies, or adversarial robustness.
 - Long-chain examples include one cumulative-baseline narrative; they do not exhaust multi-session agent behaviours.
+- Planned benchmark growth (multilingual, extra domains, adversarial batches) is described only in `benchmarks/BENCHMARK_EXPANSION_PLAN.md` until corresponding fixtures and tests land; the plan itself implies **no** additional empirical claims.
 
 ## 5. Schema validation boundary
 
