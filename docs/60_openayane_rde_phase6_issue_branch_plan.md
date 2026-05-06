@@ -343,9 +343,21 @@ The Phase 6 concept is transformed into issue-sized work packages, branch names,
 
 This plan introduces explicit P6 numbering and branch names. These are project-management artefacts, not theoretical changes to RDE.
 
-### 8.4 Unresolved elements
+### 8.4 Resolved delivery (PR stack, no Phase 6 issues)
 
-The actual GitHub Issue numbers are unresolved until P6 issues are created. Once created, this document should be updated with concrete issue numbers.
+Work landed on `main` via stacked PRs (May 2026); dedicated GitHub Issues were optional and not created for every P6 row.
+
+| P6 slice | PR |
+|---------|-----|
+| P6-1 / P6-2 | [#84](https://github.com/zyx-corporation/openayane-rde/pull/84) |
+| P6-3 | [#91](https://github.com/zyx-corporation/openayane-rde/pull/91) |
+| P6-4 | [#86](https://github.com/zyx-corporation/openayane-rde/pull/86) |
+| P6-5 | [#87](https://github.com/zyx-corporation/openayane-rde/pull/87) |
+| P6-6 | [#88](https://github.com/zyx-corporation/openayane-rde/pull/88) |
+| P6-7 | [#89](https://github.com/zyx-corporation/openayane-rde/pull/89) |
+| P6-9 / P6-8 / P6-10 | [#90](https://github.com/zyx-corporation/openayane-rde/pull/90) |
+
+See also `docs/62_openayane_rde_phase6_completion_report.md` §2. **Stack tip:** avoid `gh pr merge --delete-branch` on a base branch while child PRs are still open, or child PRs may auto-close.
 
 ### 8.5 Drift risks
 
@@ -361,7 +373,7 @@ Key risks:
 
 ### 8.6 Next update policy
 
-After creating Phase 6 issues, update this document with concrete issue numbers and links.
+If Phase 6 work is later re-split into GitHub Issues, add an **Issue** column or table alongside the PR table in §8.4. PR links above remain the historical merge record.
 
 ## 9. Final statement
 

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "openayane-rde"
-version = "0.1.0"
+version = "0.1.1"
 description = "OpenAyane RDE: structural and semantic deviation evaluation for generative and agentic systems"
 readme = "README.md"
 requires-python = ">=3.12"

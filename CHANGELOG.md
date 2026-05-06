@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.1.1] - 2026-05-06
+
+### Added
+
+Phase 6 — research evaluation and public specification (fixture-local benchmarks; no external-validity claim):
+
+- Public specs: `specs/rde_core_spec.md`, `specs/task_contract_schema.md`, `specs/rde_result_schema.md`, `specs/audit_event_schema.md`, `specs/relation_store_schema.md`, `specs/known_limitations.md`.
+- Benchmark tree: `benchmarks/` (skeleton, structural/long-chain/self-report fixtures), `benchmarks/evaluate.py`, `benchmarks/METRICS.md`, `tests/benchmarks/`.
+- Baseline artefacts: `reports/phase6_baseline_evaluation.md`, `reports/phase6_baseline_eval.json`, sample `reports/phase6_perf_sample.json`.
+- Paper skeleton: `papers/openayane_rde_paper_draft.md`; completion record: `docs/62_openayane_rde_phase6_completion_report.md`.
+
+Merged via PRs [#84](https://github.com/zyx-corporation/openayane-rde/pull/84), [#91](https://github.com/zyx-corporation/openayane-rde/pull/91), [#86](https://github.com/zyx-corporation/openayane-rde/pull/86), [#87](https://github.com/zyx-corporation/openayane-rde/pull/87), [#88](https://github.com/zyx-corporation/openayane-rde/pull/88), [#89](https://github.com/zyx-corporation/openayane-rde/pull/89), [#90](https://github.com/zyx-corporation/openayane-rde/pull/90).
+
+### Changed
+
+- Documentation: `docs/62_openayane_rde_phase6_completion_report.md` and `docs/60_openayane_rde_phase6_issue_branch_plan.md` now reference the merged Phase 6 PR stack; package version set to **0.1.1**.
+
 ## Unreleased
 
 ### Changed
@@ -13,14 +30,6 @@
 
 ### Added
 
-- Phase 6 P6-10 / P6-9 / P6-8: `docs/62_openayane_rde_phase6_completion_report.md`, `specs/known_limitations.md`, `papers/openayane_rde_paper_draft.md` (technical report skeleton).
-- Phase 6 P6-7: `reports/phase6_baseline_evaluation.md`, `reports/phase6_baseline_eval.json`, and sample `reports/phase6_perf_sample.json` (low-iteration perf harness) for fixture-local baseline documentation.
-- Phase 6 P6-6: `benchmarks/evaluate.py` (JSON benchmark report, fixture discovery, classification/action/risk metrics), `benchmarks/METRICS.md`, and `tests/benchmarks/test_benchmark_evaluate_smoke.py`.
-- Phase 6 P6-5: `benchmarks/long_chain_document_corruption/safety_framework_cumulative` (three-step cumulative baseline drift) and `benchmarks/generator_self_report_mismatch/silent_delta_claim`; tests `tests/benchmarks/test_benchmark_p6_long_chain.py`, `test_benchmark_p6_self_report_mismatch.py`.
-- Phase 6 P6-4 structural benchmark fixtures under `benchmarks/markdown_drift/citation_deleted`, `benchmarks/json_schema_corruption/required_key_deleted`, `benchmarks/python_api_drift/signature_changed` (aligned with golden cases; benchmark-specific `contract_id`s).
-- `tests/benchmarks/test_benchmark_p6_structural_fixtures.py` — optional CI skip via `pytest --ignore=tests/benchmarks/`.
-- Phase 6 `benchmarks/` skeleton: category directories, `benchmarks/README.md` (fixture layout, naming, `expected_rde_result.json` convention, non-goals).
-- Phase 6 public documentation: `specs/rde_core_spec.md` (RDE core terms and non-claims) and schema prose (`specs/task_contract_schema.md`, `specs/rde_result_schema.md`, `specs/audit_event_schema.md`, `specs/relation_store_schema.md`) aligned with `schemas/*.schema.json` and `openayane_rde.core.models`.
 - `execute_after_review_decision()` to resume `SafeExecutionRuntime` after `approve` or `approve_dry_run`.
 - `run_phase1_evaluation_from_post_execution_diff()` (`PostExecutionDiff` → Phase 1 evaluation).
 - Audit helpers in `openayane_rde.audit.log`: `audit_event_execution_gate_evaluated`, `audit_event_tool_execution`, `audit_event_human_review_requested`, `audit_event_human_review_decided`, `append_audit_event`.

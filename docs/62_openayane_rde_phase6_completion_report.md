@@ -24,22 +24,24 @@ Phase 6 ステータス: P6-1〜P6-7 および P6-9 / P6-8 / P6-10 の成果物�
 外部有効性の主張: なし（benchmarks/ と reports/ のスコープに限定）
 ```
 
-## 2. Issue / PR 対応表（ローカル作業・番号は未割当）
+## 2. Issue / PR 対応表（`main` へのマージ記録）
 
-GitHub 上で Phase 6 Issue を番号付けした場合、下表の **Issue** 列を追記すること。
+Phase 6 は **Issue なし・PR スタック**で納品した（必要なら後から Issue を遡及リンク）。**Issue** 列は未作成のため「—」とする。
 
-| P6 | 内容 | ブランチ例（計画） | Issue | PR |
-|----|------|-------------------|-------|-----|
-| P6-1 | RDE Core 公開仕様 | `phase6/p6-1-rde-core-spec` | （未割当） | （未割当） |
-| P6-2 | スキーマ叙述 | `phase6/p6-2-schema-specs` | （未割当） | （未割当） |
-| P6-3 | benchmark 骨格 | `phase6/p6-3-benchmark-skeleton` | （未割当） | （未割当） |
-| P6-4 | 構造ベンチマーク | `phase6/p6-4-structural-benchmark-fixtures` | （未割当） | （未割当） |
-| P6-5 | 長鎖・自己申告不一致 | `phase6/p6-5-long-chain-self-report-benchmarks` | （未割当） | （未割当） |
-| P6-6 | 評価メトリクス・`evaluate.py` | `phase6/p6-6-evaluation-metrics-harness` | （未割当） | （未割当） |
-| P6-7 | ベースライン評価レポート | `phase6/p6-7-baseline-evaluation-report` | （未割当） | （未割当） |
-| P6-9 | 既知の限界 | `phase6/p6-9-p6-8-p6-10-completion-docs` 等 | （未割当） | （未割当） |
-| P6-8 | 技術報告スケルトン | 同上 | （未割当） | （未割当） |
-| P6-10 | 本書（完了レポート） | 同上 | （未割当） | （未割当） |
+| P6 | 内容 | マージに使った head ブランチ（例） | Issue | PR（`main` へ squash マージ） |
+|----|------|-----------------------------------|-------|-------------------------------|
+| P6-1 | RDE Core 公開仕様 | `phase6/p6-1-p6-2-core-and-schema-specs` | — | [#84](https://github.com/zyx-corporation/openayane-rde/pull/84) |
+| P6-2 | スキーマ叙述 | （P6-1 と同一 PR に同梱） | — | [#84](https://github.com/zyx-corporation/openayane-rde/pull/84) |
+| P6-3 | benchmark 骨格 | `phase6/p6-3-benchmark-skeleton` | — | [#91](https://github.com/zyx-corporation/openayane-rde/pull/91)（[#85](https://github.com/zyx-corporation/openayane-rde/pull/85) はベースブランチ削除で自動クローズ後、スタック復旧で再作成） |
+| P6-4 | 構造ベンチマーク | `phase6/p6-4-structural-benchmark-fixtures` | — | [#86](https://github.com/zyx-corporation/openayane-rde/pull/86) |
+| P6-5 | 長鎖・自己申告不一致 | `phase6/p6-5-long-chain-self-report-benchmarks` | — | [#87](https://github.com/zyx-corporation/openayane-rde/pull/87) |
+| P6-6 | 評価メトリクス・`evaluate.py` | `phase6/p6-6-evaluation-metrics-harness` | — | [#88](https://github.com/zyx-corporation/openayane-rde/pull/88) |
+| P6-7 | ベースライン評価レポート | `phase6/p6-7-baseline-evaluation-report` | — | [#89](https://github.com/zyx-corporation/openayane-rde/pull/89) |
+| P6-9 | 既知の限界 | `phase6/p6-9-p6-8-p6-10-completion-docs` | — | [#90](https://github.com/zyx-corporation/openayane-rde/pull/90) |
+| P6-8 | 技術報告スケルトン | （P6-9/10 と同一 PR） | — | [#90](https://github.com/zyx-corporation/openayane-rde/pull/90) |
+| P6-10 | 本書（完了レポート） | 同上 | — | [#90](https://github.com/zyx-corporation/openayane-rde/pull/90) |
+
+**参考:** 重複 PR [#83](https://github.com/zyx-corporation/openayane-rde/pull/83) は [#84](https://github.com/zyx-corporation/openayane-rde/pull/84) に取って代わられクローズ。
 
 ## 3. 成果物一覧
 
