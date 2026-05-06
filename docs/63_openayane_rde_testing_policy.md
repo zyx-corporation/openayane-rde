@@ -85,6 +85,8 @@ CI での回帰は、**意図しない RDE 意味の変化**を検知するた�
 
 ## 7. 参照
 
+- Post-Phase 6 の起票用バックログ（Epic 分割）: [`64_openayane_rde_post_phase6_project_issues.md`](64_openayane_rde_post_phase6_project_issues.md)
+- 自己申告ミスマッチのカバレッジ一覧: [`benchmarks/generator_self_report_mismatch/README.md`](../benchmarks/generator_self_report_mismatch/README.md)、[`tests/README.md`](../tests/README.md)
 - [`00_development_plan.md`](00_development_plan.md) §10、§14（RDE 差異検証観点）
 - [`specs/rde_core_spec.md`](../specs/rde_core_spec.md)
 - [`specs/known_limitations.md`](../specs/known_limitations.md)

@@ -5,6 +5,9 @@ Each fixture must include:
   modified (file)
   task_contract.json
   expected_rde_result.json
+
+RDE classification vs Policy action: [`docs/63_openayane_rde_testing_policy.md`](../../docs/63_openayane_rde_testing_policy.md) §3.
+Assertions use separate messages for classification (RDE) and required_action (policy path).
 """
 
 from __future__ import annotations
@@ -235,9 +238,6 @@ def test_golden_self_report_mismatch() -> None:
     engine = MarkdownDiff()
     diff = engine.diff(original, modified, contract, go)
 
-    from openayane_rde.rde.core import evaluate_rde
-    from openayane_rde.semantic.stub import semantic_delta_stub
-
     semantic = semantic_delta_stub(diff, contract)
     rde_result = evaluate_rde(
         contract=contract,
@@ -245,9 +245,13 @@ def test_golden_self_report_mismatch() -> None:
         structural_diff=diff,
         semantic_delta=semantic,
     )
+    policy_decision = decide_policy(rde_result, contract)
 
     assert rde_result.classification == expected["classification"], (
         f"Expected {expected['classification']!r}, got {rde_result.classification!r}"
+    )
+    assert policy_decision.action == expected["required_action"], (
+        f"Expected policy action {expected['required_action']!r}, got {policy_decision.action!r}"
     )
     if expected.get("must_have_self_report_mismatches"):
         assert len(diff.self_report_mismatches) >= 1, (

@@ -1,6 +1,7 @@
 """Adversarial tests: Generator self-report mismatch.
 
 Tests that RDE detects when the Generator's self_report contradicts the actual diff.
+[`docs/63_openayane_rde_testing_policy.md`](../../docs/63_openayane_rde_testing_policy.md) §4.
 """
 
 from __future__ import annotations

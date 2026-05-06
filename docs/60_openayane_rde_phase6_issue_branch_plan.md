@@ -70,18 +70,20 @@ Audit completeness
 
 The following issues should be created for Phase 6.
 
-| P6 | Purpose | Completion type target |
-|---|---|---|
-| P6-1 | Define public RDE Core specification | `documentation / public spec` |
-| P6-2 | Publish TaskContract / RDEResult / AuditEvent schema specs | `documentation / schema spec` |
-| P6-3 | Define benchmark fixture structure | `implementation / benchmark skeleton` |
-| P6-4 | Add markdown / JSON / Python corruption benchmark fixtures | `implementation / benchmark fixtures` |
-| P6-5 | Add long-chain drift and self-report mismatch benchmarks | `implementation / benchmark fixtures` |
-| P6-6 | Define evaluation metrics and scoring scripts | `implementation / evaluation harness` |
-| P6-7 | Generate baseline evaluation report from current implementation | `documentation / evaluation report` |
-| P6-8 | Draft public technical report / paper skeleton | `documentation / paper draft` |
-| P6-9 | Document known limitations and non-claims | `documentation / limitations spec` |
-| P6-10 | Add Phase 6 completion report | `documentation / completion record` |
+| P6 | Purpose | Completion type target | GitHub Issue (retrospective) |
+|---|---|---|---|
+| P6-1 | Define public RDE Core specification | `documentation / public spec` | [#73](https://github.com/zyx-corporation/openayane-rde/issues/73) |
+| P6-2 | Publish TaskContract / RDEResult / AuditEvent schema specs | `documentation / schema spec` | [#74](https://github.com/zyx-corporation/openayane-rde/issues/74) |
+| P6-3 | Define benchmark fixture structure | `implementation / benchmark skeleton` | [#75](https://github.com/zyx-corporation/openayane-rde/issues/75) |
+| P6-4 | Add markdown / JSON / Python corruption benchmark fixtures | `implementation / benchmark fixtures` | [#76](https://github.com/zyx-corporation/openayane-rde/issues/76) |
+| P6-5 | Add long-chain drift and self-report mismatch benchmarks | `implementation / benchmark fixtures` | [#77](https://github.com/zyx-corporation/openayane-rde/issues/77) |
+| P6-6 | Define evaluation metrics and scoring scripts | `implementation / evaluation harness` | [#78](https://github.com/zyx-corporation/openayane-rde/issues/78) |
+| P6-7 | Generate baseline evaluation report from current implementation | `documentation / evaluation report` | [#79](https://github.com/zyx-corporation/openayane-rde/issues/79) |
+| P6-8 | Draft public technical report / paper skeleton | `documentation / paper draft` | [#81](https://github.com/zyx-corporation/openayane-rde/issues/81) |
+| P6-9 | Document known limitations and non-claims | `documentation / limitations spec` | [#80](https://github.com/zyx-corporation/openayane-rde/issues/80) |
+| P6-10 | Add Phase 6 completion report | `documentation / completion record` | [#82](https://github.com/zyx-corporation/openayane-rde/issues/82) |
+
+Issue numbers reflect the merge-era tracking created on `main` after the PR stack landed; **§8.4 PR links remain the canonical merge evidence.** P6-8 / P6-9 are out of numeric order relative to execution order because issues were filed in delivery order.
 
 ## 4. Recommended execution order and branches
 
@@ -373,7 +375,9 @@ Key risks:
 
 ### 8.6 Next update policy
 
-If Phase 6 work is later re-split into GitHub Issues, add an **Issue** column or table alongside the PR table in §8.4. PR links above remain the historical merge record.
+- §3 now includes a retrospective **GitHub Issue** column for P6-1 … P6-10 ([#73](https://github.com/zyx-corporation/openayane-rde/issues/73)–[#82](https://github.com/zyx-corporation/openayane-rde/issues/82)). When scope changes, update the §3 row or add a follow-up issue and link it here.
+- §8.4 **PR table** remains the canonical merge record for the stacked delivery.
+- Post–Phase 6 backlog (CLI regression, testing policy application, benchmarks, etc.): see [`64_openayane_rde_post_phase6_project_issues.md`](64_openayane_rde_post_phase6_project_issues.md) and issues [#101](https://github.com/zyx-corporation/openayane-rde/issues/101)–[#114](https://github.com/zyx-corporation/openayane-rde/issues/114) (tracking doc maintenance: [#106](https://github.com/zyx-corporation/openayane-rde/issues/106)).
 
 ## 9. Final statement
 

@@ -41,9 +41,16 @@ ruff check src tests
 mypy src
 ```
 
-From the repository root, **`make venv`** picks `python3.12` or `python3.13` on your PATH. Then **`make dev-install`**, **`make test`**, and **`make ci`** (full CI parity: pytest + ruff + mypy). Override the interpreter with `make venv PY=/path/to/python3.12`.
+From the repository root, **`make venv`** picks `python3.12` or `python3.13` on your PATH. Then **`make dev-install`**, **`make test`**, and **`make ci`** (full CI parity: pytest + `openayane-rde schema validate` + `golden run` + ruff + mypy). Override the interpreter with `make venv PY=/path/to/python3.12`.
 
 If you see `ModuleNotFoundError: No module named 'pydantic'`, you are not using the venv where dependencies were installed, or you have not run `pip install -e '.[dev,markdown]'` yet.
+
+After `pip install -e '.[dev,markdown]'`, CI also runs **`openayane-rde schema validate`** and **`openayane-rde golden run`** (see `.github/workflows/ci.yml`). Locally: `openayane-rde schema validate --repo-root .` and `openayane-rde golden run --repo-root .`.
+
+## Contributing and releases
+
+- **Tests and RDE vs Policy:** read [`docs/63_openayane_rde_testing_policy.md`](docs/63_openayane_rde_testing_policy.md) before changing golden expectations or classification tests.
+- **Compatibility and changelog:** follow [`docs/51_openayane_rde_release_compatibility_policy.md`](docs/51_openayane_rde_release_compatibility_policy.md) and update [`CHANGELOG.md`](CHANGELOG.md) when your PR changes user-visible behavior, CLI, schemas, or public specs.
 
 ## Phase 2 scope and limitations
 
