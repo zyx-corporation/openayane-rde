@@ -53,6 +53,35 @@ status: "normative-guidance"
 
 Golden / `expected_rde_result.json` は **「この契約とこの差分に対して、現行の RDE 規則が返すべき分類・ポリシー行動」** の参照実装である。仕様変更や分類語彙の拡張時は、**意図した意味変化（ΔM）**として golden 更新をレビューする。無批判な期待値の書き換えは **suspicious drift**（実装と証拠のずれ）を招く。
 
+### 2.3 TDD 実行ルール（Red → Green → Refactor）
+
+本プロジェクトでは、§2.1 の順序を次の実行規律として運用する。
+
+```text
+Red:
+  - 先に failing test を作る（期待分類・期待 policy action・必要 evidence）。
+  - 失敗理由が「仕様で意図した失敗」になっていることを確認する。
+
+Green:
+  - 最小実装で Red を解消する。
+  - 先に定義した期待以外の意味を拡張しない（過剰実装を避ける）。
+
+Refactor:
+  - 振る舞いを変えずに構造を改善する。
+  - golden / schema / benchmark の不変条件が保たれていることを確認する。
+```
+
+最小 failing case を優先し、複合シナリオは段階的に積み上げる。巨大な fixture を最初から作るのではなく、**原因が1つに絞れる最小ケース**を先に固定すること。
+
+### 2.4 PR で要求する TDD 証跡
+
+テスト先行を形骸化させないため、PR では次を明示する。
+
+- どのテストが **Red** として先に追加されたか（テスト名またはコミット）。
+- どの変更で **Green** になったか（実装差分の要点）。
+- **Refactor** を行った場合、振る舞い不変を何で確認したか（例: golden / schema / benchmark / CI）。
+- golden 更新がある場合、その更新が「実装都合」ではなく「意図した ΔM 変更」である根拠。
+
 ## 3. RDE 分類と Policy をテストで混同しない
 
 - **RDE** は「何が起きたか」（`preserved` / `suspicious_drift` / `critical_corruption` 等）を返す。

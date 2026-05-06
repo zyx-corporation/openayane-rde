@@ -57,6 +57,14 @@ def load_expected(fixture_dir: Path) -> dict[str, str]:
     return json.loads((fixture_dir / "expected_rde_result.json").read_text())
 
 
+def test_expected_rde_result_shape() -> None:
+    """All golden fixtures must pin both RDE classification and policy action."""
+    for expected_path in FIXTURES_DIR.glob("*/expected_rde_result.json"):
+        data = json.loads(expected_path.read_text())
+        assert "classification" in data, f"Missing classification: {expected_path}"
+        assert "required_action" in data, f"Missing required_action: {expected_path}"
+
+
 def make_go(
     contract_id: str,
     payload: str,
@@ -153,6 +161,9 @@ def test_golden_markdown_definition_changed() -> None:
     assert classification == expected["classification"], (
         f"Expected classification {expected['classification']!r}, got {classification!r}"
     )
+    assert action == expected["required_action"], (
+        f"Expected action {expected['required_action']!r}, got {action!r}"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -171,7 +182,9 @@ def test_golden_markdown_citation_deleted() -> None:
     assert classification == expected["classification"], (
         f"Expected classification {expected['classification']!r}, got {classification!r}"
     )
-    assert action == "halt", f"Expected halt for critical_corruption, got {action!r}"
+    assert action == expected["required_action"], (
+        f"Expected action {expected['required_action']!r}, got {action!r}"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -197,7 +210,9 @@ def test_golden_json_required_key_deleted() -> None:
     assert classification == expected["classification"], (
         f"Expected classification {expected['classification']!r}, got {classification!r}"
     )
-    assert action == "halt"
+    assert action == expected["required_action"], (
+        f"Expected action {expected['required_action']!r}, got {action!r}"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -215,6 +230,9 @@ def test_golden_python_signature_changed() -> None:
 
     assert classification == expected["classification"], (
         f"Expected classification {expected['classification']!r}, got {classification!r}"
+    )
+    assert action == expected["required_action"], (
+        f"Expected action {expected['required_action']!r}, got {action!r}"
     )
 
 
