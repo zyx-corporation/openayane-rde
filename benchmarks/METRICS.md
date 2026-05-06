@@ -35,6 +35,7 @@ This document defines metrics computed by `benchmarks/evaluate.py`. All rates ar
 
 - **No confidence intervals** and no hypothesis tests.
 - **No implied recall/precision** for “critical corruption” or “suspicious drift” in the wild; labels here are fixture-defined.
+- Even “language variation” fixtures (e.g. multilingual wording) do not claim cross-lingual generalization; they only test fixture-local rule-based change detection.
 - **No audit-log completeness metric** in v1 of `evaluate.py` (see Phase 3+ tests for audit persistence).
 
 ## Report shape
