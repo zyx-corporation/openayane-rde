@@ -7,12 +7,25 @@ Research-oriented, reproducible fixtures for evaluating RDE behaviour. **`tests/
 ```text
 benchmarks/
   README.md                         ← this file
+  METRICS.md                        ← metric definitions (P6-6)
+  evaluate.py                       ← JSON report harness (P6-6)
   markdown_drift/                   ← Markdown structural / drift cases
   json_schema_corruption/           ← JSON shape / required-field cases
   python_api_drift/                 ← Python AST / public API cases
   long_chain_document_corruption/   ← multi-step sequences (P6-5)
   generator_self_report_mismatch/   ← self-report vs diff mismatch (P6-5)
 ```
+
+## Evaluation harness (P6-6)
+
+From the repository root (after `pip install -e '.[dev]'` or equivalent):
+
+```bash
+python benchmarks/evaluate.py --repo-root .
+python benchmarks/evaluate.py --repo-root . -o reports/phase6_eval.json
+```
+
+Metrics and non-claims: **`benchmarks/METRICS.md`**. Exit code **0** when every case matches expected **classification** and **policy action**; `risk_level` mismatches are reported in JSON but do not change the exit code unless we tighten this later.
 
 ## Structural fixtures (P6-4)
 

@@ -1,6 +1,6 @@
 {
   "classification": "suspicious_drift",
-  "risk_level": "high",
+  "risk_level": "medium",
   "required_action": "human_review",
   "drift_pattern_notes": ["number_change"],
   "step_summary": "Stronger numeric downgrade (0.95 → 0.90); still single dominant protected change."

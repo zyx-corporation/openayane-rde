@@ -13,6 +13,7 @@
 
 ### Added
 
+- Phase 6 P6-6: `benchmarks/evaluate.py` (JSON benchmark report, fixture discovery, classification/action/risk metrics), `benchmarks/METRICS.md`, and `tests/benchmarks/test_benchmark_evaluate_smoke.py`.
 - Phase 6 P6-5: `benchmarks/long_chain_document_corruption/safety_framework_cumulative` (three-step cumulative baseline drift) and `benchmarks/generator_self_report_mismatch/silent_delta_claim`; tests `tests/benchmarks/test_benchmark_p6_long_chain.py`, `test_benchmark_p6_self_report_mismatch.py`.
 - Phase 6 P6-4 structural benchmark fixtures under `benchmarks/markdown_drift/citation_deleted`, `benchmarks/json_schema_corruption/required_key_deleted`, `benchmarks/python_api_drift/signature_changed` (aligned with golden cases; benchmark-specific `contract_id`s).
 - `tests/benchmarks/test_benchmark_p6_structural_fixtures.py` — optional CI skip via `pytest --ignore=tests/benchmarks/`.
