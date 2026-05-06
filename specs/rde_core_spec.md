@@ -106,4 +106,5 @@ When modifying RDE behaviour or fixtures, reviewers should classify the change a
 - Implementation models: `src/openayane_rde/core/models.py`
 - JSON exchange schemas: `schemas/*.schema.json`
 - Schema prose: `specs/task_contract_schema.md`, `specs/rde_result_schema.md`, `specs/audit_event_schema.md`, `specs/relation_store_schema.md`
+- Limitations and non-claims: `specs/known_limitations.md`
 - Basic design (Japanese): `docs/02_openayane_basic_design.md`
