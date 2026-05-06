@@ -115,10 +115,10 @@ build-backend = "hatchling.build"
 
 [project]
 name = "openayane-rde"
-version = "0.1.1"
+version = "0.1.2"
 description = "OpenAyane RDE: structural and semantic deviation evaluation for generative and agentic systems"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 license = { text = "MIT" }
 authors = [
   { name = "Tomoyuki Kano" }
@@ -136,12 +136,18 @@ dependencies = [
   "python-dateutil>=2.8"
 ]
 
+[project.scripts]
+openayane-rde = "openayane_rde.cli.main:main"
+
 [project.optional-dependencies]
 dev = [
   "pytest>=8.0",
   "pytest-cov>=5.0",
   "ruff>=0.4",
-  "mypy>=1.8"
+  "mypy>=1.8",
+  "types-python-dateutil>=2.8",
+  "starlette>=0.37",
+  "httpx>=0.27"
 ]
 markdown = [
   "markdown-it-py>=3.0"
@@ -157,7 +163,7 @@ line-length = 100
 src = ["src", "tests"]
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 strict = true
 mypy_path = "src"
 ```
@@ -533,8 +539,9 @@ CLI is not required for the first implementation milestone.
 Recommended setup:
 
 ```bash
-python3.11 -m venv .venv
+python3.12 -m venv .venv
 source .venv/bin/activate
+python -m pip install -U pip
 pip install -e '.[dev,markdown]'
 pytest
 ruff check src tests
