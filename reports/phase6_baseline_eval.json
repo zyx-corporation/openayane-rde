@@ -1,7 +1,7 @@
 {
   "report_version": "1",
-  "generated_at": "2026-05-06T07:36:54.765259+00:00",
-  "git_commit": "d591415f3688318b6126b755b1ed64bdb6c43379",
+  "generated_at": "2026-05-06T21:24:39.694253+00:00",
+  "git_commit": "d0f420c1812bcf486a7342ab8965b7018b03d4e8",
   "repo_root": "/Users/tomyuk/Projects/openayane-rde",
   "disclaimer": "Metrics apply only to Phase 6 benchmark fixtures discovered under benchmarks/ by this script. No population inference or external validity is implied.",
   "metrics": {

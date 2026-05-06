@@ -63,6 +63,14 @@ Any publication or product narrative must separate **repository evidence** (test
 
 Changing classifiers, diff engines, policy defaults, or schema files may require updating expectations, golden files, validation tests, and benchmark JSON. That is normal RDE governance, not an indication that limitations above have been “lifted.”
 
+## 8. Pre-gateway HTTP API (`POST /v1/evaluate`)
+
+The local FastAPI surface under `src/openayane_rde/api/` is a **pre-gateway integration baseline** (M-RDE-G0), not a production control plane.
+
+- **`recommended_action`** (RDE `required_action`) and **`policy_action`** are returned for **inspection and downstream routing only**. This service **does not execute** halts, approvals, rollbacks, or any other runtime side effect.
+- Phase 1 structural diff evaluation remains **opt-in** via `OPENAYANE_RDE_API_EVALUATE_ENABLED`; when disabled, the endpoint returns `501`.
+- Integrators that need enforcement must implement execution in a separate gateway or orchestrator; RDE remains an evaluation and evidence producer.
+
 ## References
 
 - `specs/rde_core_spec.md`

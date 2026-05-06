@@ -8,11 +8,13 @@ This note records a **fixture-local** baseline for the Phase 6 benchmark tree. I
 
 | Field | Value |
 |-------|--------|
-| Package version (`pyproject.toml`) | `0.1.1` (post–Phase 6 housekeeping; baseline JSON may still reference earlier commit) |
-| Git commit evaluated (see JSON `git_commit`) | `d591415f3688318b6126b755b1ed64bdb6c43379` |
+| Package version (`pyproject.toml`) | `0.2.0` (M-RDE-G0 pre-gateway API baseline) |
+| Git commit evaluated (see JSON `git_commit`) | `d0f420c1812bcf486a7342ab8965b7018b03d4e8` |
 | Evaluation harness | `benchmarks/evaluate.py` report version `1` |
 
 The commit above is the **implementation snapshot** used when generating `reports/phase6_baseline_eval.json`. Documentation-only commits after that SHA do not change RDE behaviour until `src/` or benchmark expectations change.
+
+**M-RDE-G0:** Fixture-local benchmark metrics are unchanged at 10/10 agreement; release **0.2.0** adds the stable `POST /v1/evaluate` envelope (`contract_version`, `rde_result` per `schemas/rde_result.schema.json`, `recommended_action`) for gateway integration. See `CHANGELOG.md` [0.2.0] and `specs/known_limitations.md` §8.
 
 ## Coverage (this repository state)
 

@@ -22,6 +22,12 @@ from openayane_rde.runtime._flow import run_phase1_evaluation
 
 _API_EVALUATE_ENABLED_ENV = "OPENAYANE_RDE_API_EVALUATE_ENABLED"
 
+# M-RDE-G0: pre-gateway integration baseline (see CHANGELOG [0.2.0]).
+PRE_GATEWAY_CONTRACT_VERSION = "rde-pre-gateway-integration-v0.2.0"
+RDE_RESULT_SCHEMA_URI = (
+    "https://github.com/zyx-corporation/openayane-rde/schemas/rde_result.schema.json"
+)
+
 
 def _api_evaluate_enabled() -> bool:
     raw = os.getenv(_API_EVALUATE_ENABLED_ENV, "")
@@ -137,7 +143,12 @@ async def evaluate(request: Request) -> JSONResponse:
         required_json_fields=req.required_json_fields,
     )
 
+    rde_json = result.rde_result.model_dump(mode="json")
     out = {
+        "contract_version": PRE_GATEWAY_CONTRACT_VERSION,
+        "rde_result_schema": RDE_RESULT_SCHEMA_URI,
+        "rde_result": rde_json,
+        "recommended_action": result.rde_result.required_action,
         "classification": result.rde_result.classification,
         "risk_level": result.rde_result.risk_level,
         "policy_action": result.policy_decision.action,

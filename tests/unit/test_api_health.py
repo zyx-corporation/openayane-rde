@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
+import jsonschema
 from starlette.testclient import TestClient
 
-from openayane_rde.api.app import build_app
+from openayane_rde.api.app import PRE_GATEWAY_CONTRACT_VERSION, build_app
 from openayane_rde.contract.builder import build_contract
+
+_SCHEMAS = Path(__file__).resolve().parent.parent.parent / "schemas"
 
 
 def test_health_ok() -> None:
@@ -50,8 +54,14 @@ def test_evaluate_enabled_runs() -> None:
         r = client.post("/v1/evaluate", json=req)
         assert r.status_code == 200
         body = r.json()
+        assert body["contract_version"] == PRE_GATEWAY_CONTRACT_VERSION
+        assert body["rde_result_schema"].endswith("/schemas/rde_result.schema.json")
         assert body["classification"] == "preserved"
         assert body["policy_action"] == "approve"
+        assert body["recommended_action"] == "approve"
+        assert body["recommended_action"] == body["rde_result"]["required_action"]
+        schema = json.loads((_SCHEMAS / "rde_result.schema.json").read_text())
+        jsonschema.validate(body["rde_result"], schema)
     finally:
         os.environ.pop("OPENAYANE_RDE_API_EVALUATE_ENABLED", None)
 
@@ -64,7 +74,7 @@ def test_evaluate_enabled_invalid_json_returns_400() -> None:
         client = TestClient(build_app())
         r = client.post(
             "/v1/evaluate",
-            data="{not-json",
+            content=b"{not-json",
             headers={"Content-Type": "application/json"},
         )
         assert r.status_code == 400

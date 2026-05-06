@@ -89,7 +89,8 @@ def test_audit_event_schema_required_are_fields() -> None:
 
 
 def test_relation_store_schema_required_are_fields() -> None:
-    req = _required_props("relation_store.schema.json")
+    data = _load_schema("relation_store.schema.json")
+    req = set(data["$defs"]["relation_store_record"]["required"])
     assert req <= _model_field_names(RelationStoreRecord)
 
 
@@ -169,7 +170,7 @@ def test_enum_change_type_in_structural_diff_defs_matches_schema() -> None:
 
 def test_enum_relation_type_matches_schema() -> None:
     data = _load_schema("relation_store.schema.json")
-    assert _schema_enum_at(data, ["properties", "relation_type", "enum"]) == set(
+    assert _schema_enum_at(data, ["$defs", "relation_type", "enum"]) == set(
         get_args(RelationType)
     )
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.0] - 2026-05-07
+
+### Added (M-RDE-G0 — RDE pre-gateway integration baseline)
+
+- **`POST /v1/evaluate` (opt-in):** stable envelope with `contract_version` (`rde-pre-gateway-integration-v0.2.0`), `rde_result_schema`, full `rde_result` (JSON matching `schemas/rde_result.schema.json`), and `recommended_action` (same as `rde_result.required_action`). Actions are **informational**; the HTTP service does not execute policy or RDE recommendations.
+- API docs: `src/openayane_rde/api/README.md`; scope boundary: `specs/known_limitations.md` §8.
+- Unit test: `rde_result` validated with `jsonschema` against `schemas/rde_result.schema.json`.
+
 ## [0.1.2] - 2026-05-06
 
 ### Added
