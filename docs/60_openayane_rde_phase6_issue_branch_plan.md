@@ -379,6 +379,8 @@ Key risks:
 - §8.4 **PR table** remains the canonical merge record for the stacked delivery.
 - Post–Phase 6 backlog (CLI regression, testing policy application, benchmarks, etc.): see [`64_openayane_rde_post_phase6_project_issues.md`](64_openayane_rde_post_phase6_project_issues.md) and issues [#101](https://github.com/zyx-corporation/openayane-rde/issues/101)–[#114](https://github.com/zyx-corporation/openayane-rde/issues/114) (tracking doc maintenance: [#106](https://github.com/zyx-corporation/openayane-rde/issues/106)).
 
+**Post-Phase-6 planning:** Phase 6 exit criteria and Phase 7 track split (7A–7D) are documented in `docs/00_development_plan.md` §9.5–§9.6 (see GitHub [#92](https://github.com/zyx-corporation/openayane-rde/issues/92)).
+
 ## 9. Final statement
 
 Phase 6 should make OpenAyane RDE legible, reproducible, and criticizable.
