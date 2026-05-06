@@ -1,6 +1,6 @@
 {
   "classification": "suspicious_drift",
-  "risk_level": "high",
+  "risk_level": "medium",
   "required_action": "human_review",
   "notes": "Default parameter removed and filter logic altered; protected signature drift."
 }

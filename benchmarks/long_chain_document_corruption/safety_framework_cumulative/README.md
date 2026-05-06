@@ -4,8 +4,8 @@
 
 | Step | Change vs baseline | Expected `classification` |
 |------|----------------------|---------------------------|
-| `step_01` | `0.95` → `0.93` | `suspicious_drift` |
-| `step_02` | `0.95` → `0.90` | `suspicious_drift` |
+| `step_01` | `0.95` → `0.93` | `suspicious_drift` (`risk_level` `medium` in current RDE) |
+| `step_02` | `0.95` → `0.90` | `suspicious_drift` (`risk_level` `medium`) |
 | `step_03` | `0.95` → `0.80` + citation removed / weakened | `critical_corruption` |
 
 **Drift narrative:** numeric slippage in a stated recall target, then compound damage when the primary citation is removed—typical long-horizon documentation risk.
