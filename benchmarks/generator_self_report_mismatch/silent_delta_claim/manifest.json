@@ -1,0 +1,7 @@
+{
+  "fixture_id": "silent_delta_claim",
+  "category": "generator_self_report_mismatch",
+  "domain": "markdown",
+  "phase6": "P6-5",
+  "source_golden": "tests/golden/fixtures/self_report_mismatch"
+}
