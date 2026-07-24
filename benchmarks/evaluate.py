@@ -6,7 +6,7 @@ Run from the repository root::
 
     python benchmarks/evaluate.py --repo-root .
 
-Requires the package and test helpers importable (``pip install -e '.[dev]'`` or ``PYTHONPATH=.``).
+Requires the package and test helpers importable (``pip install -e '.[dev,markdown]'`` or ``PYTHONPATH=.``).
 """
 
 from __future__ import annotations

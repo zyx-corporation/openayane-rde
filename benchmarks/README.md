@@ -19,7 +19,7 @@ benchmarks/
 
 ## Evaluation harness (P6-6)
 
-From the repository root (after `pip install -e '.[dev]'` or equivalent):
+From the repository root (after `pip install -e '.[dev,markdown]'`, matching CI):
 
 ```bash
 python benchmarks/evaluate.py --repo-root .
