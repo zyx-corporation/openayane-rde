@@ -37,6 +37,22 @@ Phase 5・6 完了後の作業を **GitHub Project** で追いやすい粒度に
 | A6 | `docs/60_openayane_rde_phase6_issue_branch_plan.md` の Issue 番号追記とメンテ方針 | `documentation` |
 | A7 | CONTRIBUTING（または README）に CHANGELOG / 互換ポリシー（`docs/51`）への導線を追加する | `documentation` |
 
+### Epic A 実施状況（依存順）
+
+```text
+A1 -> A2 -> A3 -> A4/A5 -> A6 -> A7
+```
+
+| ID | 状況 | 根拠 |
+|----|------|------|
+| A1 | 実施済み | `tests/golden/test_golden.py`, `tests/unit/test_rde_classifier.py`, `tests/unit/test_policy_bridge.py`, `tests/unit/test_phase1_flow.py` で RDE/Policy 境界を明示 |
+| A2 | 実施済み | `tests/README.md` と上記テストモジュール先頭 docstring で `docs/63` を参照 |
+| A3 | 実施済み | `benchmarks/generator_self_report_mismatch/README.md` に棚卸し表とギャップを記載 |
+| A4 | 実施済み | `.github/workflows/ci.yml` に `openayane-rde schema validate` / `openayane-rde golden run` の明示ステップあり |
+| A5 | 実施済み | `schemas/relation_store.schema.json` 採用済み、`tests/unit/test_schema_fixtures.py` / `tests/unit/test_schema_validation.py` で検証 |
+| A6 | 実施済み | `docs/60_openayane_rde_phase6_issue_branch_plan.md` §3 と §8.6 に Issue 番号・更新方針を反映 |
+| A7 | 実施済み | `CONTRIBUTING.md` を追加し、`README.md` の Contributing 節から導線を追加 |
+
 ### A1 — 本文ドラフト
 
 ```text
@@ -212,7 +228,24 @@ B2 は B1 に依存
 B6 は B4/B5 より先に着手可能（論文と既存 baseline の同期）
 ```
 
-## 5. 文書履歴
+## 5. 重要マイルストーン記録
+
+### M-RDE-G0: RDE pre-gateway integration baseline
+
+本マイルストーンは、Gateway 連携前段の RDE 統合境界を固定する。
+
+**完了条件:**
+
+```text
+- /v1/evaluate の request/response/error contract 固定
+- Phase 1 structural diff evaluation が opt-in で動作
+- RDE result schema が Gateway から読める
+- recommended_action は返すが未執行
+- benchmark report と known_limitations が更新済み
+- rde-pre-gateway-integration-v0.2.0 タグを作成
+```
+
+## 6. 文書履歴
 
 | Version | Date | Note |
 |---------|------|------|
